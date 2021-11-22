@@ -67,8 +67,10 @@ class ProductionConfig(Config):
 
 class DevelopmentConfig(Config):
     FLASK_ENV = "development"
+    FLASK_RUN_HOST = "127.0.0.1"
     POSTGRES_URL = "127.0.0.1"
     DEBUG = True
+    # Only to debug purpose
     SQLALCHEMY_DATABASE_URI = "sqlite:///data.db"
 
     @classmethod

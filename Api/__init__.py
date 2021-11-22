@@ -7,7 +7,7 @@ from marshmallow import ValidationError
 
 from Api.config import config as Config
 from Api.blocklist import BLOCKLIST
-from Api.db import db
+from Api.db import db, migrate
 from Api.ma import ma
 from Api.resources.user import (TokenRefresh, User, UserLogin, UserLogout,
                             UserRegister)
@@ -26,6 +26,9 @@ def create_app(config: str) -> "Flask":
     Config[config_name].init_app(app)
 
     api = Api(app)
+    db.init_app(app)
+    migrate.init_app(app, db)
+    jwt = JWTManager(app)
 
     @app.before_first_request
     def create_tables():
@@ -34,8 +37,6 @@ def create_app(config: str) -> "Flask":
     @app.errorhandler(ValidationError)
     def handle_marshmallow_validation(err):
         return jsonify(err.messages), 400
-
-    jwt = JWTManager(app)
 
     # This method will check if a token is blocklisted, and will be called automatically when blocklist is enabled
     @jwt.token_in_blocklist_loader
