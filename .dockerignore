@@ -1,0 +1,9 @@
+#ignore git files
+.git
+.cache
+
+#ignore readmes
+*.md
+
+#ignore cache
+*.pyc

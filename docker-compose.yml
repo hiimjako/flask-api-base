@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  flask-api:
+    container_name: flask-api
+    build:
+      dockerfile: ./Dockerfile
+      context: .
+    # ports:
+    #   - "5000:5000"
+    #expose solo all'interno della network docker
+    expose:
+      - 5000
+    volumes:
+      - ./:/app
+    networks:
+      - api-network
+    env_file:
+      - .env
+    environment:
+      - FLASK_ENV=production
+    depends_on:
+      - flask-db
+    restart: unless-stopped
+
+  flask-db:
+    container_name: flask-db
+    hostname: flask-db.docker
+    image: postgres:13-alpine
+    restart: unless-stopped
+    ports:
+      - 5432:5432
+    env_file:
+      - .env
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    networks:
+      - api-network
+    volumes:
+      - flask-db-data:/var/lib/postgresql/data/pgdata
+      
+volumes:
+  flask-db-data:
+    name: flask-db-data
+
+networks:
+  api-network:
