@@ -9,6 +9,7 @@ from Api.config import config as Config
 from Api.blocklist import BLOCKLIST
 from Api.db import db, migrate
 from Api.ma import ma
+from Api.errors.app import InvalidConfigurationName
 from Api.resources.user import (TokenRefresh, User, UserLogin, UserLogout,
                             UserRegister)
 
@@ -19,7 +20,9 @@ def create_app(config: str) -> "Flask":
     config_name = config
     if not isinstance(config, str):
         config_name = os.environ.get("FLASK_ENV") or "development" 
-    
+    if config_name not in Config:
+        raise InvalidConfigurationName(config_name)
+
     app = Flask(__name__, static_url_path='/static')
     app.config.from_object(Config[config_name])
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
