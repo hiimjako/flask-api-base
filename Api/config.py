@@ -7,7 +7,7 @@ if path.exists(".env"):
     for line in open(".env"):
         var = line.strip().split("=")
         if len(var) == 2:
-            environ[var[0]] = var[1].replace("\"", "")
+            environ[var[0]] = var[1].replace('"', "")
 
 
 def get_env_path(variable: str) -> str:
@@ -20,6 +20,7 @@ def get_env_path(variable: str) -> str:
     except KeyError:
         print(f"Missing {variable} env!")
         exit(1)
+
 
 class Config:
     DEBUG = False
@@ -36,7 +37,7 @@ class Config:
     POSTGRES_PORT = get_env_path("POSTGRES_PORT")
     POSTGRES_DB = get_env_path("POSTGRES_DB")
 
-    MAIL_SERVER = 'smtp.gmail.com'
+    MAIL_SERVER = "smtp.gmail.com"
     MAIL_PORT = 587
     MAIL_USE_TLS = True
     MAIL_USERNAME = get_env_path("MAIL_USERNAME")
@@ -56,10 +57,9 @@ class Config:
         return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_URL}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
 
-
-
 class ProductionConfig(Config):
     FLASK_ENV = "production"
+
     @classmethod
     def init_app(cls, app):
         print("PRODUCTION")
@@ -75,8 +75,10 @@ class DevelopmentConfig(Config):
 
     @classmethod
     def init_app(cls, app):
-        print("THIS APP IS IN DEBUG MODE. \
-                YOU SHOULD NOT SEE THIS IN PRODUCTION.")
+        print(
+            "THIS APP IS IN DEBUG MODE. \
+                YOU SHOULD NOT SEE THIS IN PRODUCTION."
+        )
 
 
 class TestingConfig(Config):
@@ -85,8 +87,10 @@ class TestingConfig(Config):
 
     @classmethod
     def init_app(cls, app):
-        print("THIS APP IS IN TEST MODE. \
-                YOU SHOULD NOT SEE THIS IN PRODUCTION.")
+        print(
+            "THIS APP IS IN TEST MODE. \
+                YOU SHOULD NOT SEE THIS IN PRODUCTION."
+        )
 
 
 config = {

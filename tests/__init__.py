@@ -1,8 +1,10 @@
 from flask_testing import TestCase
 from Api import create_app, db
+
 # https://pythonhosted.org/Flask-Testing/
 
 TEST_CONFIG = "test"
+
 
 class BaseTest(TestCase):
     def create_app(self):
@@ -14,10 +16,8 @@ class BaseTest(TestCase):
         try:
             self.populate_db()
         except:
-            print('NO DATA INSERTED! missing populate_db function')
+            print("NO DATA INSERTED! missing populate_db function")
 
     def tearDown(self):
         db.session.remove()
         db.drop_all()
-
-

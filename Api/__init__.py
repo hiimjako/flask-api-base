@@ -10,22 +10,22 @@ from Api.blocklist import BLOCKLIST
 from Api.db import db, migrate
 from Api.ma import ma
 from Api.errors.app import InvalidConfigurationName
-from Api.resources.user import (TokenRefresh, User, UserLogin, UserLogout,
-                            UserRegister)
+from Api.resources.user import TokenRefresh, User, UserLogin, UserLogout, UserRegister
 
 basedir = os.path.abspath(os.path.dirname(__file__))
+
 
 def create_app(config: str) -> "Flask":
     """Creates the main flask app"""
     config_name = config
     if not isinstance(config, str):
-        config_name = os.environ.get("FLASK_ENV") or "development" 
+        config_name = os.environ.get("FLASK_ENV") or "development"
     if config_name not in Config:
         raise InvalidConfigurationName(config_name)
 
-    app = Flask(__name__, static_url_path='/static')
+    app = Flask(__name__, static_url_path="/static")
     app.config.from_object(Config[config_name])
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     Config[config_name].init_app(app)
 
     api = Api(app)
@@ -46,7 +46,6 @@ def create_app(config: str) -> "Flask":
     def check_if_token_in_blocklist(jwt_header, jwt_payload):
         return jwt_payload["jti"] in BLOCKLIST
 
-
     api.add_resource(UserRegister, "/register")
     api.add_resource(User, "/user/<int:user_id>")
     api.add_resource(UserLogin, "/login")
@@ -54,4 +53,3 @@ def create_app(config: str) -> "Flask":
     api.add_resource(UserLogout, "/logout")
 
     return app
-

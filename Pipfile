@@ -34,6 +34,7 @@ flask-testing = "*"
 
 [dev-packages]
 coverage = "*"
+black = "*"
 
 [requires]
 python_version = "3.9"
