@@ -30,8 +30,10 @@ sqlalchemy = "*"
 toml = "*"
 werkzeug = "*"
 requests = "*"
+flask-testing = "*"
 
 [dev-packages]
+coverage = "*"
 
 [requires]
 python_version = "3.9"

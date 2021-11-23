@@ -81,6 +81,7 @@ class DevelopmentConfig(Config):
 
 class TestingConfig(Config):
     TESTING = True
+    SQLALCHEMY_DATABASE_URI = "sqlite://"
 
     @classmethod
     def init_app(cls, app):
