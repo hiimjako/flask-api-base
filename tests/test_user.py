@@ -3,16 +3,16 @@ from tests import BaseTest
 
 
 class SignupTest(BaseTest):
-    # def populate_db(self):
-    #     user_json = {
-    #         "username": "guest",
-    #         "password": "1234",
-    #         "email": "moretti919@gmail.com"
-    #     }
-    #     user = UserSchema().load(user_json)
-    #     user.save_to_db()
+    def populate_db(self):
+        user_json = {
+            "username": "guest",
+            "password": "1234",
+            "email": "moretti919@gmail.com",
+        }
+        user = UserSchema().load(user_json)
+        user.save_to_db()
 
-    def test_successful_signup(self):
+    def test_successful_signup(self) -> None:
         response = self.client.get(
             "/user/1", headers={"Content-Type": "application/json"}
         )
