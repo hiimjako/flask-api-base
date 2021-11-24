@@ -1,7 +1,7 @@
 import traceback
 
 from Api.blocklist import BLOCKLIST
-from Api.libs.mailgun import MailGunException
+from http import HTTPStatus
 from Api.libs.strings import gettext
 from Api.models.confirmation import ConfirmationModel
 from Api.models.user import UserModel
@@ -27,10 +27,10 @@ class UserRegister(Resource):
         user = user_schema.load(user_json)
 
         if UserModel.find_by_username(user.username):
-            return {"message": gettext("user_username_exists")}, 400
+            return {"message": gettext("user_username_exists")}, HTTPStatus.BAD_REQUEST
 
         if UserModel.find_by_email(user.email):
-            return {"message": gettext("user_email_exists")}, 400
+            return {"message": gettext("user_email_exists")}, HTTPStatus.BAD_REQUEST
 
         try:
             user.save_to_db()
@@ -38,14 +38,13 @@ class UserRegister(Resource):
             confirmation = ConfirmationModel(user.id)
             confirmation.save_to_db()
             user.send_confirmation_email()
-            return {"message": gettext("user_registered")}, 201
-        except MailGunException as e:
-            user.delete_from_db()  # rollback
-            return {"message": str(e)}, 500
+            return {"message": gettext("user_registered")}, HTTPStatus.CREATED
         except:  # failed to save user to db
             traceback.print_exc()
             user.delete_from_db()  # rollback
-            return {"message": gettext("user_error_creating")}, 500
+            return {
+                "message": gettext("user_error_creating")
+            }, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 class User(Resource):

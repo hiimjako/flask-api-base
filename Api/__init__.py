@@ -2,17 +2,20 @@ import os
 
 from flask import Flask, jsonify
 from flask_jwt_extended import JWTManager
+from flask_mail import Mail
 from flask_restful import Api
 from marshmallow import ValidationError
 
-from Api.config import config as Config
 from Api.blocklist import BLOCKLIST
+from Api.config import config as Config
 from Api.db import db, migrate
-from Api.ma import ma
 from Api.errors.app import InvalidConfigurationName
+from Api.ma import ma
 from Api.resources.user import TokenRefresh, User, UserLogin, UserLogout, UserRegister
 
 basedir = os.path.abspath(os.path.dirname(__file__))
+
+mail = Mail()
 
 
 def create_app(config: str) -> "Flask":
@@ -31,6 +34,7 @@ def create_app(config: str) -> "Flask":
     api = Api(app)
     db.init_app(app)
     migrate.init_app(app, db)
+    mail.init_app(app)
     jwt = JWTManager(app)
 
     @app.before_first_request

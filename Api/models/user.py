@@ -1,4 +1,4 @@
-from Api.libs.mailgun import Mailgun
+from Api.libs.mail import Mail
 from Api.models.confirmation import ConfirmationModel
 from Api.db import db
 from flask import request, url_for
@@ -14,7 +14,10 @@ class UserModel(db.Model):
     email = db.Column(db.String(80), nullable=False, unique=True)
 
     confirmation = db.relationship(
-        "ConfirmationModel", lazy="dynamic", cascade="all, delete-orphan"
+        "ConfirmationModel",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+        back_populates="user",
     )
 
     @property
@@ -45,8 +48,8 @@ class UserModel(db.Model):
         # https://stackoverflow.com/questions/509211/understanding-pythons-slice-notation
         text = f"Please click the link to confirm your registration: {link}"
         html = f"<html>Please click the link to confirm your registration: <a href={link}>link</a></html>"
-        # send e-mail with MailGun
-        return Mailgun.send_email([self.email], subject, text, html)
+        # send e-mail with Mail
+        return Mail.send_email([self.email], subject, text, html)
 
     def save_to_db(self) -> None:
         db.session.add(self)

@@ -1,5 +1,7 @@
 from os import environ, path
 
+from Api.libs.env import get_env_path
+
 basedir = path.abspath(path.dirname(__file__))
 
 # Try better handling
@@ -8,18 +10,6 @@ if path.exists(".env"):
         var = line.strip().split("=")
         if len(var) == 2:
             environ[var[0]] = var[1].replace('"', "")
-
-
-def get_env_path(variable: str) -> str:
-    """Return an env variabile, throws error if not exists"""
-    try:
-        value = environ.get(variable)
-        if value is None:
-            raise KeyError
-        return value
-    except KeyError:
-        print(f"Missing {variable} env!")
-        exit(1)
 
 
 class Config:
