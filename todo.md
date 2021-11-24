@@ -1,6 +1,5 @@
 #TODO
 
-- creare mail per conferme
 - creare classe per return omogenei, con codici http da libreria
 - trovare modo di fare get e post senza dover fare n if
 - utilizzo corretto di JWT
@@ -12,6 +11,12 @@
 - testare ambiente docker corretto (postgres ecc)
 
 - parte finale (se ho tempo) testare il tutto
+
+# TODO2 -> per applicazione reale
+
+- creare mail per conferme
+  - con indirizzo redirect
+- creare dominio e certificati
 
 # DOMANDE
 

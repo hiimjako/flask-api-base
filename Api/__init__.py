@@ -13,6 +13,7 @@ from Api.errors.app import InvalidConfigurationName
 from Api.ma import ma
 from Api.resources.confirmation import Confirmation, ConfirmationByUser
 from Api.resources.user import TokenRefresh, User, UserLogin, UserLogout, UserRegister
+import Api.errors as APIException
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -32,7 +33,7 @@ def create_app(config: str) -> "Flask":
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     Config[config_name].init_app(app)
 
-    api = Api(app)
+    api = Api(app, errors=APIException.errors)
     db.init_app(app)
     migrate.init_app(app, db)
     mail.init_app(app)

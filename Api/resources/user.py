@@ -1,7 +1,8 @@
 import traceback
-
-from Api.blocklist import BLOCKLIST
 from http import HTTPStatus
+
+import Api.errors.user as UserException
+from Api.blocklist import BLOCKLIST
 from Api.libs.strings import gettext
 from Api.models.confirmation import ConfirmationModel
 from Api.models.user import UserModel
@@ -27,14 +28,13 @@ class UserRegister(Resource):
         user = user_schema.load(user_json)
 
         if UserModel.find_by_username(user.username):
-            return {"message": gettext("user_username_exists")}, HTTPStatus.BAD_REQUEST
+            raise UserException.UsernameAlreadyExistsError
 
         if UserModel.find_by_email(user.email):
-            return {"message": gettext("user_email_exists")}, HTTPStatus.BAD_REQUEST
+            raise UserException.UserEmailAlreadyExistsError
 
         try:
             user.save_to_db()
-
             confirmation = ConfirmationModel(user.id)
             confirmation.save_to_db()
             user.send_confirmation_email()
@@ -42,9 +42,7 @@ class UserRegister(Resource):
         except:  # failed to save user to db
             traceback.print_exc()
             user.delete_from_db()  # rollback
-            return {
-                "message": gettext("user_error_creating")
-            }, HTTPStatus.INTERNAL_SERVER_ERROR
+            raise UserException.UserCreateError
 
 
 class User(Resource):
@@ -57,18 +55,18 @@ class User(Resource):
     def get(cls, user_id: int):
         user = UserModel.find_by_id(user_id)
         if not user:
-            return {"message": gettext("user_not_found")}, 404
+            raise UserException.UserNotFound
 
-        return user_schema.dump(user), 200
+        return user_schema.dump(user), HTTPStatus.OK
 
     @classmethod
     def delete(cls, user_id: int):
         user = UserModel.find_by_id(user_id)
         if not user:
-            return {"message": gettext("user_not_found")}, 404
+            raise UserException.UserNotFound
 
         user.delete_from_db()
-        return {"message": gettext("user_deleted")}, 200
+        return {"message": gettext("user_deleted")}, HTTPStatus.OK
 
 
 class UserLogin(Resource):
@@ -86,11 +84,10 @@ class UserLogin(Resource):
                 refresh_token = create_refresh_token(user.id)
                 return (
                     {"access_token": access_token, "refresh_token": refresh_token},
-                    200,
+                    HTTPStatus.OK,
                 )
-            return {"message": gettext("user_not_confirmed").format(user.email)}, 400
-
-        return {"message": gettext("user_invalid_credentials")}, 401
+            raise UserException.UserNotConfirmed
+        raise UserException.UserInvalidCredentials
 
 
 class UserLogout(Resource):
@@ -100,7 +97,7 @@ class UserLogout(Resource):
         jti = get_jwt()["jti"]  # jti is "JWT ID", a unique identifier for a JWT.
         user_id = get_jwt_identity()
         BLOCKLIST.add(jti)
-        return {"message": gettext("user_logged_out").format(user_id)}, 200
+        return {"message": gettext("user_logged_out").format(user_id)}, HTTPStatus.OK
 
 
 class TokenRefresh(Resource):
@@ -109,4 +106,4 @@ class TokenRefresh(Resource):
     def post(cls):
         current_user = get_jwt_identity()
         new_token = create_access_token(identity=current_user, fresh=False)
-        return {"access_token": new_token}, 200
+        return {"access_token": new_token}, HTTPStatus.OK
