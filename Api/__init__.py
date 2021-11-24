@@ -11,6 +11,7 @@ from Api.config import config as Config
 from Api.db import db, migrate
 from Api.errors.app import InvalidConfigurationName
 from Api.ma import ma
+from Api.resources.confirmation import Confirmation, ConfirmationByUser
 from Api.resources.user import TokenRefresh, User, UserLogin, UserLogout, UserRegister
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -55,5 +56,7 @@ def create_app(config: str) -> "Flask":
     api.add_resource(UserLogin, "/login")
     api.add_resource(TokenRefresh, "/refresh")
     api.add_resource(UserLogout, "/logout")
+    api.add_resource(Confirmation, "/user_confirm/<string:confirmation_id>")
+    api.add_resource(ConfirmationByUser, "/confirmation/user/<int:user_id>")
 
     return app

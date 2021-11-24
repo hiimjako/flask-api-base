@@ -16,14 +16,14 @@ class Mail:
     FROM_EMAIL = f"do-not-reply@{EMAIL_DOMAIN}"
 
     @classmethod
-    def send_email(cls, recipient, subject, template):
+    def send_email(cls, recipient: list[str], subject: str, text: str, html: str):
         app = Api.create_app(get_env_path("FLASK_ENV"))
         with app.app_context():
             msg = Message(
                 cls.FROM_TITLE + subject,
                 sender=cls.FROM_EMAIL,
-                recipients=[recipient],
+                recipients=recipient,
             )
-            msg.body = render_template(template + ".txt")
-            msg.html = render_template(template + ".html")
+            msg.body = text
+            msg.html = html
             Api.mail.send(msg)

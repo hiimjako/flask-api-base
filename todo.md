@@ -12,3 +12,8 @@
 - testare ambiente docker corretto (postgres ecc)
 
 - parte finale (se ho tempo) testare il tutto
+
+# DOMANDE
+
+- Si iscrivono sia utenti che docenti?
+  - se si so già che ruolo hanno all iscrizione? (2 form diversi?)
