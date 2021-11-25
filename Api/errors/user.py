@@ -30,6 +30,10 @@ class UserNotConfirmed(HTTPException):
     pass
 
 
+class UserHasNoPermission(HTTPException):
+    pass
+
+
 errors = {
     "UsernameAlreadyExists": {
         "message": "A user with that username already exists.",
@@ -58,5 +62,9 @@ errors = {
     "UserInvalidEmail": {
         "message": "Email is not valid.",
         "status": HTTPStatus.BAD_REQUEST,
+    },
+    "UserHasNoPermission": {
+        "message": "User doesn't have the correct permissions.",
+        "status": HTTPStatus.UNAUTHORIZED,
     },
 }

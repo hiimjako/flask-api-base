@@ -1,3 +1,4 @@
+from marshmallow.fields import Bool
 from Api.db import db
 from Api.libs.mail import Mail
 from Api.models.confirmation import ConfirmationModel
@@ -57,6 +58,9 @@ class UserModel(db.Model):
         html = f"<html>Please click the link to confirm your registration: <a href={link}>link</a></html>"
         # send e-mail with Mail
         return Mail.send_email([self.email], subject, text, html)
+
+    def can(self, permission: str) -> Bool:
+        return True
 
     def save_to_db(self) -> None:
         db.session.add(self)

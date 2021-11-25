@@ -3,8 +3,9 @@ from http import HTTPStatus
 from time import time
 
 from flask_apispec.views import MethodResource
+from flask_jwt_extended.utils import get_current_user
 from flask_jwt_extended.view_decorators import jwt_required
-from Api.decorators import doc_with_jwt
+from Api.decorators import admin_required, doc_with_jwt
 import Api.errors.confirmation as ConfirmationException
 import Api.errors.user as UserException
 
@@ -70,10 +71,9 @@ class ConfirmationByUser(MethodResource, Resource):
     )
     @marshal_with(GenericReturnSchema)
     @jwt_required()
+    @admin_required
     def post(self, user_id: int):
-        user = UserModel.find_by_id(user_id)
-        if not user:
-            raise UserException.UserNotFound
+        user = get_current_user()
 
         try:
             # find the most current confirmation for the user

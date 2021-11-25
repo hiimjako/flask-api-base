@@ -1,12 +1,11 @@
 import os
 
 from flask import Flask, jsonify
-from flask_jwt_extended import JWTManager
 from flask_mail import Mail
 from flask_restful import Api
 from marshmallow import ValidationError
 
-from Api.blocklist import BLOCKLIST
+from Api.jwt import jwt
 from Api.config import config as Config
 from Api.db import db, migrate
 from Api.errors.app import InvalidConfigurationName
@@ -55,7 +54,7 @@ def create_app(config: str) -> "Flask":
     db.init_app(app)
     migrate.init_app(app, db)
     mail.init_app(app)
-    jwt = JWTManager(app)
+    jwt.init_app(app)
     docs = FlaskApiSpec(app)
 
     @app.before_first_request
@@ -65,11 +64,6 @@ def create_app(config: str) -> "Flask":
     @app.errorhandler(ValidationError)
     def handle_marshmallow_validation(err):
         return jsonify(err.messages), 400
-
-    # This method will check if a token is blocklisted, and will be called automatically when blocklist is enabled
-    @jwt.token_in_blocklist_loader
-    def check_if_token_in_blocklist(jwt_header, jwt_payload):
-        return jwt_payload["jti"] in BLOCKLIST
 
     api.add_resource(UserRegister, "/register")
     api.add_resource(User, "/user/<int:user_id>")

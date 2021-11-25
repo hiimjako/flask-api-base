@@ -20,6 +20,7 @@ class Config:
     UPLOAD_PATH = path.join(basedir, "upload")
 
     ENCRTYPTION_KEY = get_env_path("ENCRTYPTION_KEY")
+    JWT_SECRET_KEY = ENCRTYPTION_KEY
 
     POSTGRES_USER = get_env_path("POSTGRES_USER")
     POSTGRES_PASSWORD = get_env_path("POSTGRES_PASSWORD")
