@@ -1,8 +1,9 @@
+from Api.db import db
 from Api.libs.mail import Mail
 from Api.models.confirmation import ConfirmationModel
-from Api.db import db
 from flask import request, url_for
 from requests import Response
+from werkzeug.security import check_password_hash, generate_password_hash
 
 
 class UserModel(db.Model):
@@ -10,7 +11,7 @@ class UserModel(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), nullable=False, unique=True)
-    password = db.Column(db.String(80), nullable=False)
+    password = db.Column(db.String(128), nullable=False)
     email = db.Column(db.String(80), nullable=False, unique=True)
 
     confirmation = db.relationship(
@@ -36,6 +37,12 @@ class UserModel(db.Model):
     @classmethod
     def find_by_id(cls, _id: int) -> "UserModel":
         return cls.query.filter_by(id=_id).first()
+
+    def hash_password(self):
+        self.password = generate_password_hash(self.password)
+
+    def verify_password(self, password):
+        return check_password_hash(self.password, password)
 
     def send_confirmation_email(self) -> Response:
         # configure e-mail contents

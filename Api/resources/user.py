@@ -1,21 +1,20 @@
 import traceback
 from http import HTTPStatus
 
-from Api.decorators import doc_with_jwt
-
 import Api.errors.user as UserException
 from Api.blocklist import BLOCKLIST
+from Api.decorators import doc_with_jwt
 from Api.libs.strings import gettext
 from Api.models.confirmation import ConfirmationModel
 from Api.models.user import UserModel
+from Api.schemas.common import GenericReturnSchema
 from Api.schemas.user import (
-    GenericReturnSchema,
     TokenReturnSchema,
-    UserSchema,
+    UserLoginPostRequestSchema,
     UserPostRequestSchema,
+    UserSchema,
 )
-from flask import request
-from flask_apispec import marshal_with, use_kwargs, doc
+from flask_apispec import doc, marshal_with, use_kwargs
 from flask_apispec.views import MethodResource
 from flask_jwt_extended import (
     create_access_token,
@@ -25,7 +24,6 @@ from flask_jwt_extended import (
     jwt_required,
 )
 from flask_restful import Resource
-from werkzeug.security import safe_str_cmp
 
 user_schema = UserSchema()
 
@@ -47,6 +45,7 @@ class UserRegister(MethodResource, Resource):
             raise UserException.UserEmailAlreadyExistsError
 
         try:
+            user.hash_password()
             user.save_to_db()
             confirmation = ConfirmationModel(user.id)
             confirmation.save_to_db()
@@ -88,15 +87,17 @@ class User(MethodResource, Resource):
 
 
 class UserLogin(MethodResource, Resource):
-    @doc_with_jwt(description="Login user with credentials.", tags=["User"])
+    @doc(description="Login user with credentials.", tags=["User"])
+    @use_kwargs(UserLoginPostRequestSchema, location=("json"))
     @marshal_with(TokenReturnSchema)
-    def post(self):
-        user_json = request.get_json()
+    def post(self, **kwargs):
+        # user_json = request.get_json()
+        user_json = kwargs
         user_data = user_schema.load(user_json, partial=("email",))
 
         user = UserModel.find_by_username(user_data.username)
 
-        if user and safe_str_cmp(user.password, user_data.password):
+        if user and user.verify_password(user_data.password):
             confirmation = user.most_recent_confirmation
             if confirmation and confirmation.confirmed:
                 access_token = create_access_token(user.id, fresh=True)

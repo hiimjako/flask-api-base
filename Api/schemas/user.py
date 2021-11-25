@@ -3,13 +3,20 @@ from Api.ma import ma
 from marshmallow import pre_dump, Schema, fields
 
 
-class GenericReturnSchema(Schema):
-    message = fields.String(required=True, description="The message about return")
-
-
 class TokenReturnSchema(Schema):
     access_token = fields.String(required=True, description="The jwt access token")
     refresh_token = fields.String(required=False, description="The jwt refresh token")
+
+
+class UserLoginPostRequestSchema(ma.SQLAlchemyAutoSchema):
+    # api_type = fields.String(required=True, description="API type of awesome API")
+    # Il required sta in sqlachymy, se è nullable li è required qui
+    class Meta:
+        model = UserModel
+        fields = (
+            "username",
+            "password",
+        )
 
 
 class UserPostRequestSchema(ma.SQLAlchemyAutoSchema):
@@ -20,7 +27,10 @@ class UserPostRequestSchema(ma.SQLAlchemyAutoSchema):
         # Solo per caricamento, non in get
         load_only = ("password",)
         # Solo in get non in post
-        dump_only = ("id", "confirmation")
+        dump_only = (
+            "id",
+            "confirmation",
+        )
 
 
 class UserSchema(ma.SQLAlchemyAutoSchema):
@@ -28,7 +38,10 @@ class UserSchema(ma.SQLAlchemyAutoSchema):
         model = UserModel
         load_instance = True
         load_only = ("password",)
-        dump_only = ("id", "confirmation")
+        dump_only = (
+            "id",
+            "confirmation",
+        )
 
     @pre_dump
     def _pre_dump(self, user: UserModel, **kwargs):

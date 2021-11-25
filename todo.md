@@ -1,10 +1,7 @@
 #TODO
 
-- swagger -> https://medium.com/koko-networks/automated-swagger-api-doc-with-flask-restful-a78119bc4473
-  https://github.com/jmcarp/flask-apispec
-- creare classe per return omogenei, con codici http da libreria
+- confirmation page
 - trovare modo di fare get e post senza dover fare n if
-- utilizzo corretto di JWT
 - modellare risorse
 - caricamento immagini SU FIREBASE
 - gestione video
@@ -24,3 +21,11 @@
 
 - Si iscrivono sia utenti che docenti?
   - se si so già che ruolo hanno all iscrizione? (2 form diversi?)
+
+#TODO fatti
+
+- swagger -> https://medium.com/koko-networks/automated-swagger-api-doc-with-flask-restful-a78119bc4473
+  https://github.com/jmcarp/flask-apispec
+- creare classe per return omogenei, con codici http da libreria
+  - https://marshmallow-sqlalchemy.readthedocs.io/en/latest/recipes.html#overriding-generated-fields
+- utilizzo corretto di JWT
