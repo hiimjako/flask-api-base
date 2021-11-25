@@ -3,8 +3,13 @@ from Api.ma import ma
 from marshmallow import pre_dump, Schema, fields
 
 
-class GenericReturn(Schema):
+class GenericReturnSchema(Schema):
     message = fields.String(required=True, description="The message about return")
+
+
+class TokenReturnSchema(Schema):
+    access_token = fields.String(required=True, description="The jwt access token")
+    refresh_token = fields.String(required=False, description="The jwt refresh token")
 
 
 class UserPostRequestSchema(ma.SQLAlchemyAutoSchema):

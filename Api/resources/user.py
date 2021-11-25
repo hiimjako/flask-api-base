@@ -1,5 +1,6 @@
 import traceback
 from http import HTTPStatus
+
 from Api.decorators import doc_with_jwt
 
 import Api.errors.user as UserException
@@ -7,7 +8,12 @@ from Api.blocklist import BLOCKLIST
 from Api.libs.strings import gettext
 from Api.models.confirmation import ConfirmationModel
 from Api.models.user import UserModel
-from Api.schemas.user import UserSchema, UserPostRequestSchema, GenericReturn
+from Api.schemas.user import (
+    GenericReturnSchema,
+    TokenReturnSchema,
+    UserSchema,
+    UserPostRequestSchema,
+)
 from flask import request
 from flask_apispec import marshal_with, use_kwargs, doc
 from flask_apispec.views import MethodResource
@@ -27,7 +33,8 @@ user_schema = UserSchema()
 class UserRegister(MethodResource, Resource):
     @doc(description="Insert user.", tags=["User"])
     @use_kwargs(UserPostRequestSchema, location=("json"))
-    @marshal_with(GenericReturn)  # parso solo quello che voglio, le cose in più rimosse
+    # parso solo quello che voglio, le cose in più rimosse
+    @marshal_with(GenericReturnSchema)
     def post(self, **kwargs):
         # user_json = request.get_json()
         user_json = kwargs
@@ -55,6 +62,7 @@ class UserRegister(MethodResource, Resource):
 
 
 class User(MethodResource, Resource):
+    # TODO: TO REMOVE
     @doc(description="Get user information.", tags=["User"])
     @marshal_with(user_schema)
     def get(self, user_id: int):
@@ -64,6 +72,12 @@ class User(MethodResource, Resource):
 
         return user, HTTPStatus.OK
 
+    @doc_with_jwt(
+        description="Delete a user. (only for admin)",
+        params={"Authorization": {"description": "ciao"}},
+        tags=["User"],
+    )
+    @jwt_required()
     def delete(self, user_id: int):
         user = UserModel.find_by_id(user_id)
         if not user:
@@ -73,7 +87,9 @@ class User(MethodResource, Resource):
         return {"message": gettext("user_deleted")}, HTTPStatus.OK
 
 
-class UserLogin(Resource):
+class UserLogin(MethodResource, Resource):
+    @doc_with_jwt(description="Login user with credentials.", tags=["User"])
+    @marshal_with(TokenReturnSchema)
     def post(self):
         user_json = request.get_json()
         user_data = user_schema.load(user_json, partial=("email",))
@@ -95,7 +111,7 @@ class UserLogin(Resource):
 
 class UserLogout(MethodResource, Resource):
     @doc_with_jwt(description="Logut user.", tags=["User"])
-    @marshal_with(GenericReturn)
+    @marshal_with(GenericReturnSchema)
     @jwt_required()
     def post(self):
         jti = get_jwt()["jti"]  # jti is "JWT ID", a unique identifier for a JWT.
@@ -104,7 +120,8 @@ class UserLogout(MethodResource, Resource):
         return {"message": gettext("user_logged_out").format(user_id)}, HTTPStatus.OK
 
 
-class TokenRefresh(Resource):
+class TokenRefresh(MethodResource, Resource):
+    @marshal_with(TokenReturnSchema)
     @jwt_required(refresh=True)
     def post(self):
         current_user = get_jwt_identity()
