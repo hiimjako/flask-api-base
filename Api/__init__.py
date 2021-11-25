@@ -80,5 +80,6 @@ def create_app(config: str) -> "Flask":
 
     docs.register(User)
     docs.register(UserRegister)
+    docs.register(UserLogout)
 
     return app

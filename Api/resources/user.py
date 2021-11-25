@@ -1,5 +1,6 @@
 import traceback
 from http import HTTPStatus
+from Api.decorators import doc_with_jwt
 
 import Api.errors.user as UserException
 from Api.blocklist import BLOCKLIST
@@ -26,7 +27,7 @@ user_schema = UserSchema()
 class UserRegister(MethodResource, Resource):
     @doc(description="Insert user.", tags=["User"])
     @use_kwargs(UserPostRequestSchema, location=("json"))
-    @marshal_with(GenericReturn)
+    @marshal_with(GenericReturn)  # parso solo quello che voglio, le cose in più rimosse
     def post(self, **kwargs):
         # user_json = request.get_json()
         user_json = kwargs
@@ -92,7 +93,9 @@ class UserLogin(Resource):
         raise UserException.UserInvalidCredentials
 
 
-class UserLogout(Resource):
+class UserLogout(MethodResource, Resource):
+    @doc_with_jwt(description="Logut user.", tags=["User"])
+    @marshal_with(GenericReturn)
     @jwt_required()
     def post(self):
         jti = get_jwt()["jti"]  # jti is "JWT ID", a unique identifier for a JWT.
