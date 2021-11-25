@@ -1,4 +1,3 @@
-from marshmallow.fields import Bool
 from Api.db import db
 from Api.libs.mail import Mail
 from Api.models.confirmation import ConfirmationModel
@@ -14,6 +13,8 @@ class UserModel(db.Model):
     username = db.Column(db.String(80), nullable=False, unique=True)
     password = db.Column(db.String(128), nullable=False)
     email = db.Column(db.String(80), nullable=False, unique=True)
+    role_id = db.Column(db.Integer, db.ForeignKey("roles.id"), nullable=False)
+    role = db.relationship("RoleModel", backref=db.backref("user", lazy="dynamic"))
 
     confirmation = db.relationship(
         "ConfirmationModel",
@@ -59,7 +60,7 @@ class UserModel(db.Model):
         # send e-mail with Mail
         return Mail.send_email([self.email], subject, text, html)
 
-    def can(self, permission: str) -> Bool:
+    def can(self, permission: str) -> bool:
         return True
 
     def save_to_db(self) -> None:

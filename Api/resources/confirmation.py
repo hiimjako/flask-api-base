@@ -1,18 +1,15 @@
 import traceback
 from http import HTTPStatus
-from time import time
 
 from flask_apispec.views import MethodResource
 from flask_jwt_extended.utils import get_current_user
 from flask_jwt_extended.view_decorators import jwt_required
 from Api.decorators import admin_required, doc_with_jwt
 import Api.errors.confirmation as ConfirmationException
-import Api.errors.user as UserException
 
 
 from Api.libs.strings import gettext
 from Api.models.confirmation import ConfirmationModel
-from Api.models.user import UserModel
 from Api.schemas.common import GenericReturnSchema
 from Api.schemas.confirmation import ConfirmationSchema
 from flask import make_response, redirect, render_template
@@ -77,17 +74,17 @@ class ConfirmationByUser(MethodResource, Resource):
 
         try:
             # find the most current confirmation for the user
-            confirmation = user.most_recent_confirmation  # using property decorator
+            confirmation = user.most_recent_confirmation
             if confirmation:
                 if confirmation.confirmed:
                     raise ConfirmationException.ConfirmationAlreadyConfirmed
                 confirmation.force_to_expire()
 
-            new_confirmation = ConfirmationModel(user_id)  # create a new confirmation
+            new_confirmation = ConfirmationModel(user_id)
             new_confirmation.save_to_db()
             # Does `user` object know the new confirmation by now? Yes.
             # An excellent example where lazy='dynamic' comes into use.
-            user.send_confirmation_email()  # re-send the confirmation email
+            user.send_confirmation_email()
             return {
                 "message": gettext("confirmation_resend_successful")
             }, HTTPStatus.CREATED

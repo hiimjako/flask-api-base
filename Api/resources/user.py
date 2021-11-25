@@ -7,6 +7,7 @@ from Api.decorators import doc_with_jwt
 from Api.libs.strings import gettext
 from Api.models.confirmation import ConfirmationModel
 from Api.models.user import UserModel
+from Api.models.permission import RoleModel
 from Api.schemas.common import GenericReturnSchema
 from Api.schemas.user import (
     TokenReturnSchema,
@@ -46,6 +47,8 @@ class UserRegister(MethodResource, Resource):
 
         try:
             user.hash_password()
+            default_role = RoleModel.find_by_name("student")
+            user.role_id = default_role.id
             user.save_to_db()
             confirmation = ConfirmationModel(user.id)
             confirmation.save_to_db()
@@ -125,6 +128,6 @@ class TokenRefresh(MethodResource, Resource):
     @marshal_with(TokenReturnSchema)
     @jwt_required(refresh=True)
     def post(self):
-        current_user = get_jwt_identity()
-        new_token = create_access_token(identity=current_user, fresh=False)
+        user_id = get_jwt_identity()
+        new_token = create_access_token(identity=user_id, fresh=False)
         return {"access_token": new_token}, HTTPStatus.OK

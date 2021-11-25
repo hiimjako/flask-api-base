@@ -16,6 +16,8 @@
 - creare mail per conferme
   - con indirizzo redirect
 - creare dominio e certificati
+- creare token per encrypt e jwt
+- jwt != encrypt
 
 # DOMANDE
 
