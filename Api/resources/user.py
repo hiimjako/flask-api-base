@@ -39,10 +39,10 @@ class UserRegister(MethodResource, Resource):
         user = user_schema.load(user_json)
 
         if UserModel.find_by_username(user.username):
-            raise UserException.UsernameAlreadyExistsError
+            raise UserException.UsernameAlreadyExists
 
         if UserModel.find_by_email(user.email):
-            raise UserException.UserEmailAlreadyExistsError
+            raise UserException.UserEmailAlreadyExists
 
         try:
             user.hash_password()
@@ -57,7 +57,7 @@ class UserRegister(MethodResource, Resource):
         except:  # failed to save user to db
             traceback.print_exc()
             user.delete_from_db()  # rollback
-            raise UserException.UserCreateError
+            raise UserException.UserCreate
 
 
 class User(MethodResource, Resource):
