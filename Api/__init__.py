@@ -14,6 +14,9 @@ from Api.ma import ma
 from Api.resources.confirmation import Confirmation, ConfirmationByUser
 from Api.resources.user import TokenRefresh, User, UserLogin, UserLogout, UserRegister
 import Api.errors as APIException
+from apispec import APISpec
+from apispec.ext.marshmallow import MarshmallowPlugin
+from flask_apispec.extension import FlaskApiSpec
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -30,7 +33,21 @@ def create_app(config: str) -> "Flask":
 
     app = Flask(__name__, static_url_path="/static")
     app.config.from_object(Config[config_name])
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config.update(
+        {
+            "APISPEC_SPEC": APISpec(
+                title="Awesome Project",
+                version="v1",
+                plugins=[MarshmallowPlugin()],
+                openapi_version="2.0.0",
+            ),
+            "APISPEC_SWAGGER_URL": "/swagger/",  # URI to access API Doc JSON
+            "APISPEC_SWAGGER_UI_URL": "/swagger-ui/",  # URI to access UI of API Doc
+            "SQLALCHEMY_TRACK_MODIFICATIONS": False,
+            # "PROPAGATE_EXCEPTIONS": True
+        }
+    )
+
     Config[config_name].init_app(app)
 
     api = Api(app, errors=APIException.errors)
@@ -38,6 +55,7 @@ def create_app(config: str) -> "Flask":
     migrate.init_app(app, db)
     mail.init_app(app)
     jwt = JWTManager(app)
+    docs = FlaskApiSpec(app)
 
     @app.before_first_request
     def create_tables():
@@ -59,5 +77,8 @@ def create_app(config: str) -> "Flask":
     api.add_resource(UserLogout, "/logout")
     api.add_resource(Confirmation, "/user_confirm/<string:confirmation_id>")
     api.add_resource(ConfirmationByUser, "/confirmation/user/<int:user_id>")
+
+    docs.register(User)
+    docs.register(UserRegister)
 
     return app

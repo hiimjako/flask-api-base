@@ -6,8 +6,10 @@ from Api.blocklist import BLOCKLIST
 from Api.libs.strings import gettext
 from Api.models.confirmation import ConfirmationModel
 from Api.models.user import UserModel
-from Api.schemas.user import UserSchema
+from Api.schemas.user import UserSchema, UserPostRequestSchema, GenericReturn
 from flask import request
+from flask_apispec import marshal_with, use_kwargs, doc
+from flask_apispec.views import MethodResource
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
@@ -21,10 +23,13 @@ from werkzeug.security import safe_str_cmp
 user_schema = UserSchema()
 
 
-class UserRegister(Resource):
-    @classmethod
-    def post(cls):
-        user_json = request.get_json()
+class UserRegister(MethodResource, Resource):
+    @doc(description="Insert user.", tags=["User"])
+    @use_kwargs(UserPostRequestSchema, location=("json"))
+    @marshal_with(GenericReturn)
+    def post(self, **kwargs):
+        # user_json = request.get_json()
+        user_json = kwargs
         user = user_schema.load(user_json)
 
         if UserModel.find_by_username(user.username):
@@ -39,28 +44,26 @@ class UserRegister(Resource):
             confirmation.save_to_db()
             user.send_confirmation_email()
             return {"message": gettext("user_registered")}, HTTPStatus.CREATED
+        except UserException.UserInvalidEmail:
+            user.delete_from_db()  # rollback
+            raise UserException.UserInvalidEmail
         except:  # failed to save user to db
             traceback.print_exc()
             user.delete_from_db()  # rollback
             raise UserException.UserCreateError
 
 
-class User(Resource):
-    """
-    This resource can be useful when testing our Flask app. We may not want to expose it to public users, but for the
-    sake of demonstration in this course, it can be useful when we are manipulating data regarding the users.
-    """
-
-    @classmethod
-    def get(cls, user_id: int):
+class User(MethodResource, Resource):
+    @doc(description="Get user information.", tags=["User"])
+    @marshal_with(user_schema)
+    def get(self, user_id: int):
         user = UserModel.find_by_id(user_id)
         if not user:
             raise UserException.UserNotFound
 
-        return user_schema.dump(user), HTTPStatus.OK
+        return user, HTTPStatus.OK
 
-    @classmethod
-    def delete(cls, user_id: int):
+    def delete(self, user_id: int):
         user = UserModel.find_by_id(user_id)
         if not user:
             raise UserException.UserNotFound
@@ -70,8 +73,7 @@ class User(Resource):
 
 
 class UserLogin(Resource):
-    @classmethod
-    def post(cls):
+    def post(self):
         user_json = request.get_json()
         user_data = user_schema.load(user_json, partial=("email",))
 
@@ -91,9 +93,8 @@ class UserLogin(Resource):
 
 
 class UserLogout(Resource):
-    @classmethod
     @jwt_required()
-    def post(cls):
+    def post(self):
         jti = get_jwt()["jti"]  # jti is "JWT ID", a unique identifier for a JWT.
         user_id = get_jwt_identity()
         BLOCKLIST.add(jti)
@@ -101,9 +102,8 @@ class UserLogout(Resource):
 
 
 class TokenRefresh(Resource):
-    @classmethod
     @jwt_required(refresh=True)
-    def post(cls):
+    def post(self):
         current_user = get_jwt_identity()
         new_token = create_access_token(identity=current_user, fresh=False)
         return {"access_token": new_token}, HTTPStatus.OK

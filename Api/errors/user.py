@@ -22,6 +22,10 @@ class UserInvalidCredentials(HTTPException):
     pass
 
 
+class UserInvalidEmail(HTTPException):
+    pass
+
+
 class UserNotConfirmed(HTTPException):
     pass
 
@@ -49,6 +53,10 @@ errors = {
     },
     "UserNotConfirmed": {
         "message": "User not yet confirmed.",
+        "status": HTTPStatus.BAD_REQUEST,
+    },
+    "UserInvalidEmail": {
+        "message": "Email is not valid.",
         "status": HTTPStatus.BAD_REQUEST,
     },
 }

@@ -1,5 +1,7 @@
 #TODO
 
+- swagger -> https://medium.com/koko-networks/automated-swagger-api-doc-with-flask-restful-a78119bc4473
+  https://github.com/jmcarp/flask-apispec
 - creare classe per return omogenei, con codici http da libreria
 - trovare modo di fare get e post senza dover fare n if
 - utilizzo corretto di JWT

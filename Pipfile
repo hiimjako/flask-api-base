@@ -32,6 +32,7 @@ werkzeug = "*"
 requests = "*"
 flask-testing = "*"
 flask-mail = "*"
+flask-apispec = "*"
 
 [dev-packages]
 coverage = "*"

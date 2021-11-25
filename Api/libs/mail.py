@@ -2,6 +2,7 @@ import os
 from typing import List
 
 import Api
+from Api.errors.user import UserInvalidEmail
 from Api.libs.env import get_env_path
 from Api.libs.strings import gettext
 from flask_mail import Message
@@ -26,4 +27,7 @@ class Mail:
             )
             msg.body = text
             msg.html = html
-            Api.mail.send(msg)
+            try:
+                Api.mail.send(msg)
+            except:
+                raise UserInvalidEmail
