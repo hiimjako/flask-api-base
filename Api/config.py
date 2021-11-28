@@ -40,7 +40,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     @classmethod
-    def init_app(app):
+    def verbose(app):
         pass
 
     @property
@@ -52,7 +52,7 @@ class ProductionConfig(Config):
     FLASK_ENV = "production"
 
     @classmethod
-    def init_app(cls, app):
+    def verbose(cls):
         print("PRODUCTION")
 
 
@@ -65,11 +65,8 @@ class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI = "sqlite:///data.db"
 
     @classmethod
-    def init_app(cls, app):
-        print(
-            "THIS APP IS IN DEBUG MODE. \
-                YOU SHOULD NOT SEE THIS IN PRODUCTION."
-        )
+    def verbose(cls):
+        print("THIS APP IS IN DEBUG MODE")
 
 
 class TestingConfig(Config):
@@ -77,11 +74,8 @@ class TestingConfig(Config):
     SQLALCHEMY_DATABASE_URI = "sqlite://"
 
     @classmethod
-    def init_app(cls, app):
-        print(
-            "THIS APP IS IN TEST MODE. \
-                YOU SHOULD NOT SEE THIS IN PRODUCTION."
-        )
+    def verbose(cls):
+        print("THIS APP IS IN TEST MODE.")
 
 
 config = {

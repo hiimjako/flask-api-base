@@ -7,7 +7,7 @@ from Api.decorators import admin_required, doc_with_jwt
 from Api.libs.strings import gettext
 from Api.models.confirmation import ConfirmationModel
 from Api.models.user import UserModel
-from Api.models.permission import RoleModel
+from Api.models.permission import DEFAULT_ROLE, RoleModel
 from Api.schemas.common import GenericReturnSchema
 from Api.schemas.user import (
     TokenReturnSchema,
@@ -26,8 +26,6 @@ from flask_jwt_extended import (
 )
 from flask_restful import Resource
 
-user_schema = UserSchema()
-
 
 class UserRegister(MethodResource, Resource):
     @doc(description="Insert user.", tags=["User"])
@@ -37,7 +35,7 @@ class UserRegister(MethodResource, Resource):
     def post(self, **kwargs):
         # user_json = request.get_json()
         user_json = kwargs
-        user = user_schema.load(user_json)
+        user = UserSchema().load(user_json, partial=("role_id",))
 
         if UserModel.find_by_username(user.username):
             raise UserException.UsernameAlreadyExists
@@ -47,12 +45,12 @@ class UserRegister(MethodResource, Resource):
 
         try:
             user.hash_password()
-            default_role = RoleModel.find_by_name("student")
-            user.role_id = default_role.id
+            # FIXME: set default
+            user.role_id = DEFAULT_ROLE
             user.save_to_db()
             confirmation = ConfirmationModel(user.id)
             confirmation.save_to_db()
-            # user.send_confirmation_email()
+            user.send_confirmation_email()
             return {"message": gettext("user_registered")}, HTTPStatus.CREATED
         except UserException.UserInvalidEmail:
             user.delete_from_db()  # rollback
@@ -66,7 +64,7 @@ class UserRegister(MethodResource, Resource):
 class User(MethodResource, Resource):
     # TODO: TO REMOVE
     @doc(description="Get user information.", tags=["User"])
-    @marshal_with(user_schema)
+    @marshal_with(UserSchema())
     @jwt_required()
     @admin_required
     def get(self, user_id: int):
@@ -99,7 +97,7 @@ class UserLogin(MethodResource, Resource):
     def post(self, **kwargs):
         # user_json = request.get_json()
         user_json = kwargs
-        user_data = user_schema.load(user_json, partial=("email",))
+        user_data = UserSchema().load(user_json, partial=("email",))
 
         user = UserModel.find_by_username(user_data.username)
 

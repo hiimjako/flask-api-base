@@ -1,3 +1,4 @@
+from marshmallow_sqlalchemy.schema import auto_field
 from Api.models.user import UserModel
 from Api.ma import ma
 from marshmallow import pre_dump, Schema, fields
@@ -42,6 +43,9 @@ class UserSchema(ma.SQLAlchemyAutoSchema):
             "id",
             "confirmation",
         )
+        partial = ("role_id",)
+
+    role_id = auto_field()
 
     @pre_dump
     def _pre_dump(self, user: UserModel, **kwargs):

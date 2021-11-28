@@ -22,13 +22,15 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 mail = Mail()
 
 
-def create_app(config: str) -> "Flask":
+def create_app(config: str, verbose: bool = True) -> "Flask":
     """Creates the main flask app"""
     config_name = config
     if not isinstance(config, str):
         config_name = os.environ.get("FLASK_ENV") or "development"
     if config_name not in Config:
         raise InvalidConfigurationName(config_name)
+    if verbose:
+        Config[config_name].verbose()
 
     app = Flask(__name__, static_url_path="/static")
     app.config.from_object(Config[config_name])
@@ -47,8 +49,6 @@ def create_app(config: str) -> "Flask":
             # "PROPAGATE_EXCEPTIONS": True
         }
     )
-
-    Config[config_name].init_app(app)
 
     api = Api(app, errors=APIException.errors)
     db.init_app(app)

@@ -8,15 +8,16 @@ TEST_CONFIG = "test"
 
 class BaseTest(TestCase):
     def create_app(self):
-        return create_app(TEST_CONFIG)
+        return create_app(TEST_CONFIG, verbose=False)
 
     def setUp(self):
-        self.app = create_app(TEST_CONFIG)
+        self.app = create_app(TEST_CONFIG, verbose=False)
         db.create_all()
         try:
             self.populate_db()
-        except:
+        except Exception as e:
             print("NO DATA INSERTED! missing populate_db function")
+            # print(e)
 
     def tearDown(self):
         db.session.remove()

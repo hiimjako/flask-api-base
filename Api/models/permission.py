@@ -8,6 +8,9 @@ class Permission:
     STUDENT = 2
 
 
+DEFAULT_ROLE = Permission.STUDENT
+
+
 class RoleModel(db.Model):
     __tablename__ = "roles"
     id = db.Column(db.Integer, primary_key=True)

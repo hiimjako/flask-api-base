@@ -6,7 +6,7 @@ from Api.errors.user import UserInvalidEmail
 from Api.libs.env import get_env_path
 from Api.libs.strings import gettext
 from flask_mail import Message
-from flask import render_template
+from flask import render_template, current_app
 
 
 class Mail:
@@ -18,7 +18,7 @@ class Mail:
 
     @classmethod
     def send_email(cls, recipient: list[str], subject: str, text: str, html: str):
-        app = Api.create_app(get_env_path("FLASK_ENV"))
+        app = current_app
         with app.app_context():
             msg = Message(
                 cls.FROM_TITLE + subject,
