@@ -3,7 +3,7 @@ from http import HTTPStatus
 
 import Api.errors.user as UserException
 from Api.blocklist import BLOCKLIST
-from Api.decorators import doc_with_jwt
+from Api.decorators import admin_required, doc_with_jwt
 from Api.libs.strings import gettext
 from Api.models.confirmation import ConfirmationModel
 from Api.models.user import UserModel
@@ -52,7 +52,7 @@ class UserRegister(MethodResource, Resource):
             user.save_to_db()
             confirmation = ConfirmationModel(user.id)
             confirmation.save_to_db()
-            user.send_confirmation_email()
+            # user.send_confirmation_email()
             return {"message": gettext("user_registered")}, HTTPStatus.CREATED
         except UserException.UserInvalidEmail:
             user.delete_from_db()  # rollback
@@ -67,6 +67,8 @@ class User(MethodResource, Resource):
     # TODO: TO REMOVE
     @doc(description="Get user information.", tags=["User"])
     @marshal_with(user_schema)
+    @jwt_required()
+    @admin_required
     def get(self, user_id: int):
         user = UserModel.find_by_id(user_id)
         if not user:
@@ -80,6 +82,7 @@ class User(MethodResource, Resource):
         tags=["User"],
     )
     @jwt_required()
+    @admin_required
     def delete(self, user_id: int):
         user = UserModel.find_by_id(user_id)
         if not user:

@@ -33,11 +33,14 @@ def permission_required(permission):
     def wrapper(func):
         @wraps(func)
         def decorated_function(*args, **kwargs):
+            user = None
+
             try:
                 user = get_current_user()
-                if not user.can(permission):
-                    raise UserException.UserHasNoPermission
-            except:
+            except Exception as e:
+                raise UserException.UserIsNotLoggedIn
+
+            if not user.can(permission):
                 raise UserException.UserHasNoPermission
             return func(*args, **kwargs)
 

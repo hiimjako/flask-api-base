@@ -34,6 +34,10 @@ class UserHasNoPermission(HTTPException):
     pass
 
 
+class UserIsNotLoggedIn(HTTPException):
+    pass
+
+
 errors = {
     "UsernameAlreadyExists": {
         "message": "A user with that username already exists.",
@@ -65,6 +69,10 @@ errors = {
     },
     "UserHasNoPermission": {
         "message": "User doesn't have the correct permissions.",
+        "status": HTTPStatus.UNAUTHORIZED,
+    },
+    "UserIsNotLoggedIn": {
+        "message": "User isn't logged, log in before.",
         "status": HTTPStatus.UNAUTHORIZED,
     },
 }

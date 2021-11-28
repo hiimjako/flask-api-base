@@ -3,14 +3,16 @@ from sqlalchemy import event
 
 
 class Permission:
-    GENERAL = 0
-    ADMINISTER = 1
+    ADMINISTER = 0
+    TEACHER = 1
+    STUDENT = 2
 
 
 class RoleModel(db.Model):
     __tablename__ = "roles"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
+    # is useless priority?
     priority = db.Column(db.Integer, unique=True)
     # users = db.relationship("UserModel", backref="role", lazy="dynamic")
 
@@ -26,7 +28,7 @@ class RoleModel(db.Model):
 # maybe better put it into migrations
 @event.listens_for(RoleModel.__table__, "after_create")
 def insert_initial_values(*args, **kwargs):
-    db.session.add(RoleModel(name="admin", priority=0))
-    db.session.add(RoleModel(name="teacher", priority=1))
-    db.session.add(RoleModel(name="student", priority=2))
+    db.session.add(RoleModel(name="admin", priority=Permission.ADMINISTER))
+    db.session.add(RoleModel(name="teacher", priority=Permission.TEACHER))
+    db.session.add(RoleModel(name="student", priority=Permission.STUDENT))
     db.session.commit()

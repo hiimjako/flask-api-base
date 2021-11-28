@@ -5,6 +5,8 @@ from flask import request, url_for
 from requests import Response
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from Api.models.permission import Permission
+
 
 class UserModel(db.Model):
     __tablename__ = "users"
@@ -60,8 +62,10 @@ class UserModel(db.Model):
         # send e-mail with Mail
         return Mail.send_email([self.email], subject, text, html)
 
-    def can(self, permission: str) -> bool:
-        return True
+    def can(self, permission: int) -> bool:
+        if self.role.priority == Permission.ADMINISTER:
+            return True
+        return permission == self.role.priority
 
     def save_to_db(self) -> None:
         db.session.add(self)
