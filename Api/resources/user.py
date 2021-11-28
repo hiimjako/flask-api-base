@@ -97,7 +97,7 @@ class UserLogin(MethodResource, Resource):
     def post(self, **kwargs):
         # user_json = request.get_json()
         user_json = kwargs
-        user_data = UserSchema().load(user_json, partial=("email",))
+        user_data = UserSchema().load(user_json, partial=("email", "role_id"))
 
         user = UserModel.find_by_username(user_data.username)
 

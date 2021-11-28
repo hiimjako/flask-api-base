@@ -22,7 +22,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 mail = Mail()
 
 
-def create_app(config: str, verbose: bool = True) -> "Flask":
+def create_app(config: str = "development", verbose: bool = True) -> "Flask":
     """Creates the main flask app"""
     config_name = config
     if not isinstance(config, str):

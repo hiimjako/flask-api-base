@@ -16,8 +16,9 @@ class BaseTest(TestCase):
         try:
             self.populate_db()
         except Exception as e:
-            print("NO DATA INSERTED! missing populate_db function")
+            # print("NO DATA INSERTED! missing populate_db function")
             # print(e)
+            pass
 
     def tearDown(self):
         db.session.remove()
