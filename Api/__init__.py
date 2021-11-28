@@ -1,12 +1,11 @@
 import os
 
 from flask import Flask, jsonify
-from flask_jwt_extended import JWTManager
 from flask_mail import Mail
 from flask_restful import Api
 from marshmallow import ValidationError
 
-from Api.blocklist import BLOCKLIST
+from Api.jwt import jwt
 from Api.config import config as Config
 from Api.db import db, migrate
 from Api.errors.app import InvalidConfigurationName
@@ -14,6 +13,9 @@ from Api.ma import ma
 from Api.resources.confirmation import Confirmation, ConfirmationByUser
 from Api.resources.user import TokenRefresh, User, UserLogin, UserLogout, UserRegister
 import Api.errors as APIException
+from apispec import APISpec
+from apispec.ext.marshmallow import MarshmallowPlugin
+from flask_apispec.extension import FlaskApiSpec
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -30,14 +32,30 @@ def create_app(config: str) -> "Flask":
 
     app = Flask(__name__, static_url_path="/static")
     app.config.from_object(Config[config_name])
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config.update(
+        {
+            "APISPEC_SPEC": APISpec(
+                title="Awesome Project",
+                version="v1",
+                plugins=[MarshmallowPlugin()],
+                openapi_version="2.0.0",
+            ),
+            "APISPEC_SWAGGER_URL": "/swagger/",  # URI to access API Doc JSON
+            "APISPEC_SWAGGER_UI_URL": "/swagger-ui/",  # URI to access UI of API Doc
+            "SQLALCHEMY_TRACK_MODIFICATIONS": False,
+            "JWT_TOKEN_LOCATION": ["headers"]
+            # "PROPAGATE_EXCEPTIONS": True
+        }
+    )
+
     Config[config_name].init_app(app)
 
     api = Api(app, errors=APIException.errors)
     db.init_app(app)
     migrate.init_app(app, db)
     mail.init_app(app)
-    jwt = JWTManager(app)
+    jwt.init_app(app)
+    docs = FlaskApiSpec(app)
 
     @app.before_first_request
     def create_tables():
@@ -47,11 +65,6 @@ def create_app(config: str) -> "Flask":
     def handle_marshmallow_validation(err):
         return jsonify(err.messages), 400
 
-    # This method will check if a token is blocklisted, and will be called automatically when blocklist is enabled
-    @jwt.token_in_blocklist_loader
-    def check_if_token_in_blocklist(jwt_header, jwt_payload):
-        return jwt_payload["jti"] in BLOCKLIST
-
     api.add_resource(UserRegister, "/register")
     api.add_resource(User, "/user/<int:user_id>")
     api.add_resource(UserLogin, "/login")
@@ -59,5 +72,12 @@ def create_app(config: str) -> "Flask":
     api.add_resource(UserLogout, "/logout")
     api.add_resource(Confirmation, "/user_confirm/<string:confirmation_id>")
     api.add_resource(ConfirmationByUser, "/confirmation/user/<int:user_id>")
+
+    docs.register(User)
+    docs.register(UserRegister)
+    docs.register(UserLogout)
+    docs.register(UserLogin)
+    docs.register(Confirmation)
+    docs.register(ConfirmationByUser)
 
     return app

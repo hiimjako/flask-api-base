@@ -2,15 +2,15 @@ from werkzeug.exceptions import HTTPException
 from http import HTTPStatus
 
 
-class UsernameAlreadyExistsError(HTTPException):
+class UsernameAlreadyExists(HTTPException):
     pass
 
 
-class UserEmailAlreadyExistsError(HTTPException):
+class UserEmailAlreadyExists(HTTPException):
     pass
 
 
-class UserCreateError(HTTPException):
+class UserCreate(HTTPException):
     pass
 
 
@@ -22,16 +22,28 @@ class UserInvalidCredentials(HTTPException):
     pass
 
 
+class UserInvalidEmail(HTTPException):
+    pass
+
+
 class UserNotConfirmed(HTTPException):
     pass
 
 
+class UserHasNoPermission(HTTPException):
+    pass
+
+
+class UserIsNotLoggedIn(HTTPException):
+    pass
+
+
 errors = {
-    "UsernameAlreadyExistsError": {
+    "UsernameAlreadyExists": {
         "message": "A user with that username already exists.",
         "status": HTTPStatus.CONFLICT,
     },
-    "UserEmailAlreadyExistsError": {
+    "UserEmailAlreadyExists": {
         "message": "A user with that email already exists.",
         "status": HTTPStatus.CONFLICT,
     },
@@ -39,7 +51,7 @@ errors = {
         "message": "User not found.",
         "status": HTTPStatus.NOT_FOUND,
     },
-    "UserCreateError": {
+    "UserCreate": {
         "message": "Internal server error. Failed to create user.",
         "status": HTTPStatus.INTERNAL_SERVER_ERROR,
     },
@@ -50,5 +62,17 @@ errors = {
     "UserNotConfirmed": {
         "message": "User not yet confirmed.",
         "status": HTTPStatus.BAD_REQUEST,
+    },
+    "UserInvalidEmail": {
+        "message": "Email is not valid.",
+        "status": HTTPStatus.BAD_REQUEST,
+    },
+    "UserHasNoPermission": {
+        "message": "User doesn't have the correct permissions.",
+        "status": HTTPStatus.UNAUTHORIZED,
+    },
+    "UserIsNotLoggedIn": {
+        "message": "User isn't logged, log in before.",
+        "status": HTTPStatus.UNAUTHORIZED,
     },
 }

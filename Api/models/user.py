@@ -1,8 +1,11 @@
+from Api.db import db
 from Api.libs.mail import Mail
 from Api.models.confirmation import ConfirmationModel
-from Api.db import db
 from flask import request, url_for
 from requests import Response
+from werkzeug.security import check_password_hash, generate_password_hash
+
+from Api.models.permission import Permission
 
 
 class UserModel(db.Model):
@@ -10,8 +13,10 @@ class UserModel(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), nullable=False, unique=True)
-    password = db.Column(db.String(80), nullable=False)
+    password = db.Column(db.String(128), nullable=False)
     email = db.Column(db.String(80), nullable=False, unique=True)
+    role_id = db.Column(db.Integer, db.ForeignKey("roles.id"), nullable=False)
+    role = db.relationship("RoleModel", backref=db.backref("user", lazy="dynamic"))
 
     confirmation = db.relationship(
         "ConfirmationModel",
@@ -37,6 +42,12 @@ class UserModel(db.Model):
     def find_by_id(cls, _id: int) -> "UserModel":
         return cls.query.filter_by(id=_id).first()
 
+    def hash_password(self):
+        self.password = generate_password_hash(self.password)
+
+    def verify_password(self, password):
+        return check_password_hash(self.password, password)
+
     def send_confirmation_email(self) -> Response:
         # configure e-mail contents
         subject = "Registration Confirmation"
@@ -50,6 +61,11 @@ class UserModel(db.Model):
         html = f"<html>Please click the link to confirm your registration: <a href={link}>link</a></html>"
         # send e-mail with Mail
         return Mail.send_email([self.email], subject, text, html)
+
+    def can(self, permission: int) -> bool:
+        if self.role.priority == Permission.ADMINISTER:
+            return True
+        return permission == self.role.priority
 
     def save_to_db(self) -> None:
         db.session.add(self)
