@@ -44,10 +44,9 @@ class UserRegister(MethodResource, Resource):
             raise UserException.UserEmailAlreadyExists
 
         try:
-            user.hash_password()
             # FIXME: set default
             user.role_id = DEFAULT_ROLE
-            user.save_to_db()
+            user.create_user()
             confirmation = ConfirmationModel(user.id)
             confirmation.save_to_db()
             user.send_confirmation_email()

@@ -67,6 +67,11 @@ class UserModel(db.Model):
             return True
         return permission == self.role.priority
 
+    def create_user(self) -> None:
+        self.hash_password()
+        db.session.add(self)
+        db.session.commit()
+
     def save_to_db(self) -> None:
         db.session.add(self)
         db.session.commit()

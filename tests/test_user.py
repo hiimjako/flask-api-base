@@ -2,6 +2,7 @@ from http import HTTPStatus
 from Api.models.permission import DEFAULT_ROLE
 
 from Api.models.user import UserModel
+from Api.models.confirmation import ConfirmationModel
 from Api.schemas.user import UserSchema
 
 from tests import BaseTest
@@ -16,7 +17,10 @@ class SignupTest(BaseTest):
             "role_id": 1,
         }
         user = UserSchema().load(user_json)
-        user.save_to_db()
+        user.create_user()
+        confirmation = ConfirmationModel(user.id)
+        confirmation.confirmed = True
+        confirmation.save_to_db()
 
     def test_successful_signup(self) -> None:
         response = self.client.post(
@@ -29,7 +33,6 @@ class SignupTest(BaseTest):
         )
 
         # Then
-        print(response.json)
         assert "access_token" in response.json
         assert "refresh_token" in response.json
         self.assertEqual(HTTPStatus.OK, response.status_code)
