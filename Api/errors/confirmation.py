@@ -40,7 +40,7 @@ errors = {
         "status": HTTPStatus.BAD_REQUEST,
     },
     "ConfirmationAlreadyConfirmed": {
-        "message": "The confirmation token has been already confirmed.",
+        "message": "The user has been already confirmed.",
         "status": HTTPStatus.BAD_REQUEST,
     },
     "ConfirmationNotFound": {

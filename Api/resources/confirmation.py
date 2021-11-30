@@ -6,6 +6,8 @@ from flask_apispec import doc, marshal_with
 from flask_apispec.views import MethodResource
 from flask_restful import Resource
 
+from Api.schemas.common import GenericReturnSchema
+
 
 class Confirmation(MethodResource, Resource):
     @doc(
@@ -22,6 +24,7 @@ class Confirmation(MethodResource, Resource):
         },
         tags=["Confirmation"],
     )
+    @marshal_with(GenericReturnSchema)
     def get(self, user_id: int, confirmation_token: str):
         user = UserModel.find_by_id(user_id)
         if not user:
