@@ -34,6 +34,7 @@ flask-testing = "*"
 flask-mail = "*"
 flask-apispec = "*"
 authlib = "*"
+flask-argon2 = "*"
 
 [dev-packages]
 coverage = "*"

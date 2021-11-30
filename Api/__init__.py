@@ -16,6 +16,7 @@ import Api.errors as APIException
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
 from flask_apispec.extension import FlaskApiSpec
+from flask_argon2 import Argon2
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -45,13 +46,20 @@ def create_app(config: str = "development", verbose: bool = True) -> "Flask":
             "APISPEC_SWAGGER_URL": "/swagger/",  # URI to access API Doc JSON
             "APISPEC_SWAGGER_UI_URL": "/swagger-ui/",  # URI to access UI of API Doc
             "SQLALCHEMY_TRACK_MODIFICATIONS": False,
-            "JWT_TOKEN_LOCATION": ["headers"]
+            "JWT_TOKEN_LOCATION": ["headers"],
             # "PROPAGATE_EXCEPTIONS": True
+            # "ARGON2_TIME_COST": 2,  # iterations
+            # "ARGON2_MEMORY_COST": 102400,  # kb
+            # "ARGON2_PARALLELISM": 8,
+            # "ARGON2_HASH_LENGTH": 32,  # byte
+            # "ARGON2_SALT_LENGTH": 32,  # byte
+            # "ARGON2_ENCODING": "utf-8",
         }
     )
 
     api = Api(app, errors=APIException.errors)
     db.init_app(app)
+    Argon2().init_app(app)
     migrate.init_app(app, db)
     mail.init_app(app)
     jwt.init_app(app)

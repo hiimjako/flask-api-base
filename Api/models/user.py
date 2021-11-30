@@ -1,9 +1,12 @@
 import json
+
+from flask_argon2 import check_password_hash, generate_password_hash
 from Api.db import db
 from Api.libs.mail import Mail
 from flask import request, url_for, current_app
 from requests import Response
-from werkzeug.security import check_password_hash, generate_password_hash
+
+# from werkzeug.security import check_password_hash, generate_password_hash
 from authlib.jose import JsonWebSignature
 from time import time
 import Api.errors.confirmation as ConfirmationException
