@@ -4,6 +4,12 @@ from flask import Flask, jsonify
 from flask_mail import Mail
 from flask_restful import Api
 from marshmallow import ValidationError
+from Api.libs.flask_uploads import (
+    configure_uploads,
+    patch_request_class,
+    UploadSet,
+    DEFAULTS,
+)
 
 from Api.jwt import jwt
 from Api.config import config as Config
@@ -11,6 +17,7 @@ from Api.db import db, migrate
 from Api.errors.app import InvalidConfigurationName
 from Api.ma import ma
 from Api.resources.confirmation import Confirmation
+from Api.resources.file import Image, ImageUpload
 from Api.resources.user import TokenRefresh, User, UserLogin, UserLogout, UserRegister
 import Api.errors as APIException
 from apispec import APISpec
@@ -20,6 +27,7 @@ from flask_apispec.extension import FlaskApiSpec
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 mail = Mail()
+FILE_SET = UploadSet("files", DEFAULTS)
 
 
 def create_app(config: str = "development", verbose: bool = True) -> "Flask":
@@ -45,11 +53,15 @@ def create_app(config: str = "development", verbose: bool = True) -> "Flask":
             "APISPEC_SWAGGER_URL": "/swagger/",  # URI to access API Doc JSON
             "APISPEC_SWAGGER_UI_URL": "/swagger-ui/",  # URI to access UI of API Doc
             "SQLALCHEMY_TRACK_MODIFICATIONS": False,
-            "JWT_TOKEN_LOCATION": ["headers"]
+            "JWT_TOKEN_LOCATION": ["headers"],
             # "PROPAGATE_EXCEPTIONS": True
+            "UPLOADS_DEFAULT_DEST": ".",
+            "UPLOADS_DEFAULT_URL": ".",
         }
     )
 
+    patch_request_class(app, 10 * 1024 * 1024)  # restrict max upload image size to 10MB
+    configure_uploads(app, FILE_SET)
     api = Api(app, errors=APIException.errors)
     db.init_app(app)
     migrate.init_app(app, db)
@@ -71,6 +83,8 @@ def create_app(config: str = "development", verbose: bool = True) -> "Flask":
     api.add_resource(TokenRefresh, "/refresh")
     api.add_resource(UserLogout, "/logout")
     api.add_resource(Confirmation, "/user_confirm/<string:confirmation_token>")
+    api.add_resource(ImageUpload, "/upload/image")
+    api.add_resource(Image, "/image/<string:filename>")
 
     docs.register(User)
     docs.register(UserRegister)
