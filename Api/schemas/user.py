@@ -46,8 +46,3 @@ class UserSchema(ma.SQLAlchemyAutoSchema):
         partial = ("role_id",)
 
     role_id = auto_field()
-
-    @pre_dump
-    def _pre_dump(self, user: UserModel, **kwargs):
-        user.confirmation = [user.most_recent_confirmation]
-        return user

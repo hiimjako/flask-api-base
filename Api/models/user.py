@@ -1,11 +1,18 @@
+import json
 from Api.db import db
 from Api.libs.mail import Mail
-from Api.models.confirmation import ConfirmationModel
-from flask import request, url_for
+from flask import request, url_for, current_app
 from requests import Response
 from werkzeug.security import check_password_hash, generate_password_hash
+from authlib.jose import JsonWebSignature
+from time import time
+import Api.errors.confirmation as ConfirmationException
+
 
 from Api.models.permission import Permission
+
+CONFIRMATION_EXPIRATION_DELTA = 1800  # 30 minutes
+HEADER_TOKEN = {"alg": "HS256"}
 
 
 class UserModel(db.Model):
@@ -15,20 +22,9 @@ class UserModel(db.Model):
     username = db.Column(db.String(80), nullable=False, unique=True)
     password = db.Column(db.String(128), nullable=False)
     email = db.Column(db.String(80), nullable=False, unique=True)
+    confirmed = db.Column(db.Boolean, default=False)
     role_id = db.Column(db.Integer, db.ForeignKey("roles.id"), nullable=False)
     role = db.relationship("RoleModel", backref=db.backref("user", lazy="dynamic"))
-
-    confirmation = db.relationship(
-        "ConfirmationModel",
-        lazy="dynamic",
-        cascade="all, delete-orphan",
-        back_populates="user",
-    )
-
-    @property
-    def most_recent_confirmation(self) -> "ConfirmationModel":
-        # ordered by expiration time (in descending order)
-        return self.confirmation.order_by(db.desc(ConfirmationModel.expire_at)).first()
 
     @classmethod
     def find_by_username(cls, username: str) -> "UserModel":
@@ -48,11 +44,52 @@ class UserModel(db.Model):
     def verify_password(self, password):
         return check_password_hash(self.password, password)
 
+    def generate_confirmation_token(
+        self, expiration=CONFIRMATION_EXPIRATION_DELTA
+    ) -> "bytes":
+        """Generate a confirmation token for invite"""
+        try:
+            jws = JsonWebSignature()
+            payload = {
+                "user_id": self.id,
+                "expiration": int(time()) + expiration,
+            }
+            payload = f"{json.dumps(payload)}"
+            payload = bytes(payload, encoding="raw_unicode_escape")
+            secret = bytes(
+                current_app.config["SECRET_KEY"], encoding="raw_unicode_escape"
+            )
+            return jws.serialize_compact(HEADER_TOKEN, payload, secret)
+        except:
+            raise ConfirmationException.ConfirmationCreate
+
+    def is_valid_token(self, token) -> bool:
+        """Validate a confirmation token for invite"""
+        try:
+            secret = bytes(
+                current_app.config["SECRET_KEY"], encoding="raw_unicode_escape"
+            )
+            jws = JsonWebSignature()
+            data = jws.deserialize_compact(token, secret)
+            payload = json.loads(data["payload"])
+        except:
+            raise ConfirmationException.BadSignature
+
+        if payload.get("user_id") != self.id:
+            raise ConfirmationException.InvalidUser
+
+        if time() > payload.get("expiration"):
+            raise ConfirmationException.ConfirmationExpired
+
+        return True
+
     def send_confirmation_email(self) -> Response:
         # configure e-mail contents
         subject = "Registration Confirmation"
         link = request.url_root[:-1] + url_for(
-            "confirmation", confirmation_id=self.most_recent_confirmation.id
+            "confirmation",
+            user_id=self.id,
+            confirmation_token=self.generate_confirmation_token(),
         )
         # string[:-1] means copying from start (inclusive) to the last index (exclusive), a more detailed link below:
         # from `http://127.0.0.1:5000/` to `http://127.0.0.1:5000`, since the url_for() would also contain a `/`

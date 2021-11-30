@@ -10,7 +10,7 @@ from Api.config import config as Config
 from Api.db import db, migrate
 from Api.errors.app import InvalidConfigurationName
 from Api.ma import ma
-from Api.resources.confirmation import Confirmation, ConfirmationByUser
+from Api.resources.confirmation import Confirmation
 from Api.resources.user import TokenRefresh, User, UserLogin, UserLogout, UserRegister
 import Api.errors as APIException
 from apispec import APISpec
@@ -70,14 +70,14 @@ def create_app(config: str = "development", verbose: bool = True) -> "Flask":
     api.add_resource(UserLogin, "/login")
     api.add_resource(TokenRefresh, "/refresh")
     api.add_resource(UserLogout, "/logout")
-    api.add_resource(Confirmation, "/user_confirm/<string:confirmation_id>")
-    api.add_resource(ConfirmationByUser, "/confirmation/user/<int:user_id>")
+    api.add_resource(
+        Confirmation, "/user_confirm/<int:user_id>/<string:confirmation_token>"
+    )
 
     docs.register(User)
     docs.register(UserRegister)
     docs.register(UserLogout)
     docs.register(UserLogin)
     docs.register(Confirmation)
-    docs.register(ConfirmationByUser)
 
     return app

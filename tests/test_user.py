@@ -2,7 +2,6 @@ from http import HTTPStatus
 from Api.models.permission import DEFAULT_ROLE
 
 from Api.models.user import UserModel
-from Api.models.confirmation import ConfirmationModel
 from Api.schemas.user import UserSchema
 
 from tests import BaseTest
@@ -13,14 +12,12 @@ class SignupTest(BaseTest):
         user_json = {
             "username": "guest",
             "password": "1234",
-            "email": "guest@test.com",
+            "email": "opendrive.noreply@gmail.com",
             "role_id": 1,
+            "confirmed": True,
         }
         user = UserSchema().load(user_json)
         user.create_user()
-        confirmation = ConfirmationModel(user.id)
-        confirmation.confirmed = True
-        confirmation.save_to_db()
 
     def test_successful_signup(self) -> None:
         response = self.client.post(
@@ -43,7 +40,7 @@ class UserRegister(BaseTest):
         user_json = {
             "username": "guest",
             "password": "1234",
-            "email": "guest@test.com",
+            "email": "opendrive.noreply@gmail.com",
             "role_id": 1,
         }
         user = UserSchema().load(user_json)
@@ -53,7 +50,7 @@ class UserRegister(BaseTest):
         user_json = {
             "username": "guest2",
             "password": "1234",
-            "email": "guest2@test.com",
+            "email": "opendrive2.noreply@gmail.com",
         }
 
         response = self.client.post(
@@ -69,9 +66,10 @@ class UserRegister(BaseTest):
             userSchema,
             {
                 "id": 2,
-                "email": "guest2@test.com",
+                "email": "opendrive2.noreply@gmail.com",
                 "username": "guest2",
                 "role_id": DEFAULT_ROLE,
+                "confirmed": False,
             },
         )
 
@@ -79,7 +77,7 @@ class UserRegister(BaseTest):
         user_json = {
             "username": "guest2",
             "password": "1234",
-            "email": "guest@test.com",
+            "email": "opendrive.noreply@gmail.com",
         }
 
         response = self.client.post(
@@ -92,7 +90,7 @@ class UserRegister(BaseTest):
         user_json = {
             "username": "guest",
             "password": "1234",
-            "email": "guest2@test.com",
+            "email": "opendrive2.noreply@gmail.com",
         }
 
         response = self.client.post(

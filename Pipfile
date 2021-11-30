@@ -33,6 +33,7 @@ requests = "*"
 flask-testing = "*"
 flask-mail = "*"
 flask-apispec = "*"
+authlib = "*"
 
 [dev-packages]
 coverage = "*"

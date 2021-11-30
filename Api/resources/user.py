@@ -5,7 +5,6 @@ import Api.errors.user as UserException
 from Api.blocklist import BLOCKLIST
 from Api.decorators import admin_required, doc_with_jwt
 from Api.libs.strings import gettext
-from Api.models.confirmation import ConfirmationModel
 from Api.models.user import UserModel
 from Api.models.permission import DEFAULT_ROLE, RoleModel
 from Api.schemas.common import GenericReturnSchema
@@ -47,8 +46,6 @@ class UserRegister(MethodResource, Resource):
             # FIXME: set default
             user.role_id = DEFAULT_ROLE
             user.create_user()
-            confirmation = ConfirmationModel(user.id)
-            confirmation.save_to_db()
             user.send_confirmation_email()
             return {"message": gettext("user_registered")}, HTTPStatus.CREATED
         except UserException.UserInvalidEmail:
@@ -101,8 +98,7 @@ class UserLogin(MethodResource, Resource):
         user = UserModel.find_by_username(user_data.username)
 
         if user and user.verify_password(user_data.password):
-            confirmation = user.most_recent_confirmation
-            if confirmation and confirmation.confirmed:
+            if user.confirmed:
                 access_token = create_access_token(user.id, fresh=True)
                 refresh_token = create_refresh_token(user.id)
                 return (
