@@ -70,9 +70,7 @@ def create_app(config: str = "development", verbose: bool = True) -> "Flask":
     api.add_resource(UserLogin, "/login")
     api.add_resource(TokenRefresh, "/refresh")
     api.add_resource(UserLogout, "/logout")
-    api.add_resource(
-        Confirmation, "/user_confirm/<int:user_id>/<string:confirmation_token>"
-    )
+    api.add_resource(Confirmation, "/user_confirm/<string:confirmation_token>")
 
     docs.register(User)
     docs.register(UserRegister)

@@ -19,6 +19,8 @@ class UserModel(db.Model):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), nullable=False)
+    surname = db.Column(db.String(80), nullable=False)
     username = db.Column(db.String(80), nullable=False, unique=True)
     password = db.Column(db.String(128), nullable=False)
     email = db.Column(db.String(80), nullable=False, unique=True)
@@ -63,8 +65,9 @@ class UserModel(db.Model):
         except:
             raise ConfirmationException.ConfirmationCreate
 
-    def is_valid_token(self, token) -> bool:
-        """Validate a confirmation token for invite"""
+    @classmethod
+    def user_by_token(cls, token) -> "UserModel":
+        """Validate a confirmation token for invite, it returns the user if the token is valid"""
         try:
             secret = bytes(
                 current_app.config["SECRET_KEY"], encoding="raw_unicode_escape"
@@ -75,20 +78,18 @@ class UserModel(db.Model):
         except:
             raise ConfirmationException.BadSignature
 
-        if payload.get("user_id") != self.id:
-            raise ConfirmationException.InvalidUser
-
         if time() > payload.get("expiration"):
             raise ConfirmationException.ConfirmationExpired
 
-        return True
+        user = cls.find_by_id(payload.get("user_id"))
+
+        return user
 
     def send_confirmation_email(self) -> Response:
         # configure e-mail contents
         subject = "Registration Confirmation"
         link = request.url_root[:-1] + url_for(
             "confirmation",
-            user_id=self.id,
             confirmation_token=self.generate_confirmation_token(),
         )
         # string[:-1] means copying from start (inclusive) to the last index (exclusive), a more detailed link below:

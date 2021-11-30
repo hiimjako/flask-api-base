@@ -25,23 +25,23 @@ class Confirmation(MethodResource, Resource):
         tags=["Confirmation"],
     )
     @marshal_with(GenericReturnSchema)
-    def get(self, user_id: int, confirmation_token: str):
-        user = UserModel.find_by_id(user_id)
+    def get(self, confirmation_token: str):
+        user = UserModel.user_by_token(confirmation_token)
         if not user:
             raise UserException.UserNotFound
 
         if user.confirmed:
             raise ConfirmationException.ConfirmationAlreadyConfirmed
 
-        if user.is_valid_token(confirmation_token):
-            user.confirmed = True
-            user.save_to_db()
+        # if i get the user here the token is valid
+        user.confirmed = True
+        user.save_to_db()
 
-        # headers = {"Content-Type": "text/html"}
-        # return make_response(
-        #     render_template("confirmation_page.html", email=confirmation.user.email),
-        #     200,
-        #     headers,
-        # )
+        headers = {"Content-Type": "text/html"}
+        return make_response(
+            render_template("confirmation_page.html"),
+            200,
+            headers,
+        )
         # Url_for
-        return redirect("www.google.it")
+        # return redirect("www.google.it")

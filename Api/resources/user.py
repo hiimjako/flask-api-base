@@ -93,11 +93,11 @@ class UserLogin(MethodResource, Resource):
     def post(self, **kwargs):
         # user_json = request.get_json()
         user_json = kwargs
-        user_data = UserSchema().load(user_json, partial=("email", "role_id"))
+        user_data = UserLoginPostRequestSchema().load(user_json)
 
-        user = UserModel.find_by_username(user_data.username)
+        user = UserModel.find_by_username(user_data["username"])
 
-        if user and user.verify_password(user_data.password):
+        if user and user.verify_password(user_data["password"]):
             if user.confirmed:
                 access_token = create_access_token(user.id, fresh=True)
                 refresh_token = create_refresh_token(user.id)

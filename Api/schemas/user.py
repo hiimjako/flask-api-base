@@ -9,15 +9,14 @@ class TokenReturnSchema(Schema):
     refresh_token = fields.String(required=False, description="The jwt refresh token")
 
 
-class UserLoginPostRequestSchema(ma.SQLAlchemyAutoSchema):
+class UserLoginPostRequestSchema(ma.SQLAlchemySchema):
     # api_type = fields.String(required=True, description="API type of awesome API")
     # Il required sta in sqlachymy, se è nullable li è required qui
     class Meta:
         model = UserModel
-        fields = (
-            "username",
-            "password",
-        )
+
+    username = auto_field()
+    password = auto_field()
 
 
 class UserPostRequestSchema(ma.SQLAlchemyAutoSchema):

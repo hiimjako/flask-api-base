@@ -10,6 +10,8 @@ from tests import BaseTest
 class SignupTest(BaseTest):
     def populate_db(self):
         user_json = {
+            "name": "Guest",
+            "surname": "test",
             "username": "guest",
             "password": "1234",
             "email": "opendrive.noreply@gmail.com",
@@ -38,6 +40,8 @@ class SignupTest(BaseTest):
 class UserRegister(BaseTest):
     def populate_db(self):
         user_json = {
+            "name": "Guest",
+            "surname": "test",
             "username": "guest",
             "password": "1234",
             "email": "opendrive.noreply@gmail.com",
@@ -48,6 +52,8 @@ class UserRegister(BaseTest):
 
     def test_successful_register(self) -> None:
         user_json = {
+            "name": "Guest",
+            "surname": "test",
             "username": "guest2",
             "password": "1234",
             "email": "opendrive2.noreply@gmail.com",
@@ -66,6 +72,8 @@ class UserRegister(BaseTest):
             userSchema,
             {
                 "id": 2,
+                "name": "Guest",
+                "surname": "test",
                 "email": "opendrive2.noreply@gmail.com",
                 "username": "guest2",
                 "role_id": DEFAULT_ROLE,
@@ -75,6 +83,8 @@ class UserRegister(BaseTest):
 
     def test_wrong_email(self) -> None:
         user_json = {
+            "name": "Guest",
+            "surname": "test",
             "username": "guest2",
             "password": "1234",
             "email": "opendrive.noreply@gmail.com",
@@ -88,6 +98,8 @@ class UserRegister(BaseTest):
 
     def test_wrong_username(self) -> None:
         user_json = {
+            "name": "Guest",
+            "surname": "test",
             "username": "guest",
             "password": "1234",
             "email": "opendrive2.noreply@gmail.com",
