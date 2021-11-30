@@ -9,7 +9,7 @@ from time import time
 import Api.errors.confirmation as ConfirmationException
 
 
-from Api.models.permission import Permission
+from Api.models.permission import DEFAULT_ROLE, Permission
 
 CONFIRMATION_EXPIRATION_DELTA = 1800  # 30 minutes
 HEADER_TOKEN = {"alg": "HS256"}
@@ -25,7 +25,9 @@ class UserModel(db.Model):
     password = db.Column(db.String(128), nullable=False)
     email = db.Column(db.String(80), nullable=False, unique=True)
     confirmed = db.Column(db.Boolean, default=False)
-    role_id = db.Column(db.Integer, db.ForeignKey("roles.id"), nullable=False)
+    role_id = db.Column(
+        db.Integer, db.ForeignKey("roles.id"), nullable=False, default=DEFAULT_ROLE
+    )
     role = db.relationship("RoleModel", backref=db.backref("user", lazy="dynamic"))
 
     @classmethod

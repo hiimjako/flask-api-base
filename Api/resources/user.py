@@ -6,7 +6,7 @@ from Api.blocklist import BLOCKLIST
 from Api.decorators import admin_required, doc_with_jwt
 from Api.libs.strings import gettext
 from Api.models.user import UserModel
-from Api.models.permission import DEFAULT_ROLE, RoleModel
+from Api.models.permission import DEFAULT_ROLE
 from Api.schemas.common import GenericReturnSchema
 from Api.schemas.user import (
     TokenReturnSchema,
@@ -44,7 +44,6 @@ class UserRegister(MethodResource, Resource):
 
         try:
             # FIXME: set default
-            user.role_id = DEFAULT_ROLE
             user.create_user()
             user.send_confirmation_email()
             return {"message": gettext("user_registered")}, HTTPStatus.CREATED

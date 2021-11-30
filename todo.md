@@ -1,6 +1,5 @@
 #TODO
 
-- confirmation page
 - trovare modo di fare get e post senza dover fare n if
 - modellare risorse
 - caricamento immagini SU FIREBASE
@@ -31,3 +30,4 @@
 - creare classe per return omogenei, con codici http da libreria
   - https://marshmallow-sqlalchemy.readthedocs.io/en/latest/recipes.html#overriding-generated-fields
 - utilizzo corretto di JWT
+- JWS https://docs.authlib.org/en/latest/jose/jws.html

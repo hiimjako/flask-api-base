@@ -1,12 +1,7 @@
-import os
-from typing import List
-
 import Api
 from Api.errors.user import UserInvalidEmail
-from Api.libs.env import get_env_path
-from Api.libs.strings import gettext
 from flask_mail import Message
-from flask import render_template, current_app
+from flask import current_app
 
 
 class Mail:
