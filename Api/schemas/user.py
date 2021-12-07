@@ -45,3 +45,14 @@ class UserSchema(ma.SQLAlchemyAutoSchema):
         partial = ("role_id",)
 
     role_id = auto_field()
+
+
+class UserPutRequestSchema(ma.SQLAlchemySchema):
+    class Meta:
+        model = UserModel
+
+    name = auto_field(required=False)
+    username = auto_field(required=False)
+    surname = auto_field(required=False)
+    email = auto_field(required=False)
+    avatar = auto_field(required=False)

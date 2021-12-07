@@ -4,6 +4,7 @@ from http import HTTPStatus
 import Api.errors.user as UserException
 from Api.blocklist import BLOCKLIST
 from Api.decorators import admin_required, doc_with_jwt
+from Api.jwt import get_current_user_wrapper
 from Api.libs.strings import gettext
 from Api.models.permission import DEFAULT_ROLE
 from Api.models.user import UserModel
@@ -12,10 +13,10 @@ from Api.schemas.user import (
     TokenReturnSchema,
     UserLoginPostRequestSchema,
     UserPostRequestSchema,
+    UserPutRequestSchema,
     UserSchema,
 )
 from flask import after_this_request, current_app, make_response
-from flask.json import jsonify
 from flask_apispec import doc, marshal_with, use_kwargs
 from flask_apispec.views import MethodResource
 from flask_jwt_extended import (
@@ -96,10 +97,31 @@ class SelfUser(MethodResource, Resource):
     @marshal_with(UserSchema())
     @jwt_required()
     def get(self):
-        user_id = get_jwt_identity()
-        user = UserModel.find_by_id(user_id)
+        user = get_current_user_wrapper()
         if not user:
             raise UserException.UserNotFound
+
+        return user, HTTPStatus.OK
+
+    @doc_with_jwt(description="Update logged user information.", tags=["User"])
+    @use_kwargs(UserPutRequestSchema, location=("json"))
+    @marshal_with(UserSchema())
+    @jwt_required()
+    def put(self, **kwargs):
+        user = get_current_user_wrapper()
+        if not user:
+            raise UserException.UserNotFound
+
+        user_json = kwargs
+
+        for k, v in user_json.items():
+            try:
+                if hasattr(user, k):
+                    user.__setattr__(k, v)
+            except:
+                pass
+
+        user.save_to_db()
 
         return user, HTTPStatus.OK
 

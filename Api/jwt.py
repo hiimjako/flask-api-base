@@ -1,4 +1,5 @@
 from flask_jwt_extended import JWTManager
+from flask_jwt_extended.utils import get_current_user
 
 from Api.blocklist import BLOCKLIST
 from Api.models.user import UserModel
@@ -24,3 +25,7 @@ def _user_lookup_callback(_jwt_header, jwt_data) -> "UserModel":
     if not user:
         raise UserException.UserNotFound
     return user
+
+
+def get_current_user_wrapper() -> "UserModel":
+    return get_current_user()
