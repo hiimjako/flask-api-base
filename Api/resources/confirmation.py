@@ -1,25 +1,26 @@
 import Api.errors.confirmation as ConfirmationException
 import Api.errors.user as UserException
 from Api.models.user import UserModel
-from flask import make_response, redirect, render_template
+from Api.schemas.common import GenericReturnSchema
+from flask import make_response, redirect, render_template, request
 from flask_apispec import doc, marshal_with
 from flask_apispec.views import MethodResource
 from flask_restful import Resource
-
-from Api.schemas.common import GenericReturnSchema
 
 
 class Confirmation(MethodResource, Resource):
     @doc(
         description="Confirm the user with confirmation token",
         params={
-            "user_id": {
-                "description": "The ID of the user",
-                "example": "1",
-            },
             "confirmation_token": {
                 "description": "The ID of the confirmation",
                 "example": "cdb93c441cee49ada0527862b7f73350",
+            },
+            "bypass-user-id": {
+                "description": "Admin user is enabled to bypass a user",
+                "in": "query",
+                "type": "string",
+                "required": False,
             },
         },
         tags=["Confirmation"],

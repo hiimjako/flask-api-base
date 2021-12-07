@@ -6,7 +6,7 @@ import Api.errors.user as UserException
 
 jwt = JWTManager()
 
-
+# https://flask-jwt-extended.readthedocs.io/en/stable/blocklist_and_token_revoking/
 @jwt.token_in_blocklist_loader
 def check_if_token_in_blocklist(jwt_header, jwt_payload):
     return jwt_payload["jti"] in BLOCKLIST

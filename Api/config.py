@@ -1,3 +1,4 @@
+from datetime import timedelta
 from os import environ, path
 
 from Api.libs.env import get_env_path
@@ -16,6 +17,11 @@ class Config:
     DEBUG = False
     TESTING = False
     SESSION_COOKIE_SECURE = False
+    JWT_COOKIE_SECURE = True
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
+    JWT_SESSION_COOKIE = False
+    JWT_TOKEN_LOCATION = ["headers", "cookies"]
+    # se true si eliminano dopo la chiusura del browser
 
     UPLOAD_PATH = path.join(basedir, "upload")
 
@@ -61,6 +67,7 @@ class DevelopmentConfig(Config):
     FLASK_RUN_HOST = "127.0.0.1"
     POSTGRES_URL = "127.0.0.1"
     DEBUG = True
+    JWT_COOKIE_SECURE = False
     # Only to debug purpose
     SQLALCHEMY_DATABASE_URI = "sqlite:///data.db"
 

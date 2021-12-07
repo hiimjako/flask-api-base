@@ -1,8 +1,10 @@
-from flask_apispec.annotations import activate, annotate
 from functools import wraps
-from Api.models.permission import Permission
+
+from flask_apispec.annotations import activate, annotate
 from flask_jwt_extended import get_current_user
+
 import Api.errors.user as UserException
+from Api.models.permission import Permission
 
 
 def doc_with_jwt(inherit=None, **kwargs):
