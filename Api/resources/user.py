@@ -91,6 +91,19 @@ class User(MethodResource, Resource):
         return {"message": gettext("user_deleted")}, HTTPStatus.OK
 
 
+class SelfUser(MethodResource, Resource):
+    @doc_with_jwt(description="Get logged user information.", tags=["User"])
+    @marshal_with(UserSchema())
+    @jwt_required()
+    def get(self):
+        user_id = get_jwt_identity()
+        user = UserModel.find_by_id(user_id)
+        if not user:
+            raise UserException.UserNotFound
+
+        return user, HTTPStatus.OK
+
+
 class UserLogin(MethodResource, Resource):
     @doc(description="Login user with credentials.", tags=["User"])
     @use_kwargs(UserLoginPostRequestSchema, location=("json"))
@@ -131,6 +144,7 @@ class UserLogout(MethodResource, Resource):
     @marshal_with(GenericReturnSchema)
     @jwt_required()
     def post(self):
+        # https://flask-jwt-extended.readthedocs.io/en/stable/blocklist_and_token_revoking/
         jti = get_jwt()["jti"]  # jti is "JWT ID", a unique identifier for a JWT.
         user_id = get_jwt_identity()
         BLOCKLIST.add(jti)

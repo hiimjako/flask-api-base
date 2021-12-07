@@ -24,6 +24,7 @@ from Api.jwt import jwt
 from Api.ma import ma
 from Api.resources.confirmation import Confirmation
 from Api.resources.user import (
+    SelfUser,
     TokenRefresh,
     User,
     UserLogin,
@@ -100,6 +101,7 @@ def create_app(config: str = "development", verbose: bool = True) -> "Flask":
     #         return response
 
     api.add_resource(UserRegister, "/register")
+    api.add_resource(SelfUser, "/user")
     api.add_resource(User, "/user/<int:user_id>")
     api.add_resource(UserLoginToken, "/token/login")
     api.add_resource(TokenRefresh, "/token/refresh")
@@ -109,6 +111,7 @@ def create_app(config: str = "development", verbose: bool = True) -> "Flask":
     api.add_resource(Confirmation, "/user_confirm/<string:confirmation_token>")
 
     docs.register(User)
+    docs.register(SelfUser)
     docs.register(UserRegister)
     docs.register(UserLogoutToken)
     docs.register(UserLoginToken)
