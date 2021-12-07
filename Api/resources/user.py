@@ -5,8 +5,8 @@ import Api.errors.user as UserException
 from Api.blocklist import BLOCKLIST
 from Api.decorators import admin_required, doc_with_jwt
 from Api.libs.strings import gettext
-from Api.models.user import UserModel
 from Api.models.permission import DEFAULT_ROLE
+from Api.models.user import UserModel
 from Api.schemas.common import GenericReturnSchema
 from Api.schemas.user import (
     TokenReturnSchema,
@@ -14,6 +14,8 @@ from Api.schemas.user import (
     UserPostRequestSchema,
     UserSchema,
 )
+from flask import after_this_request, current_app, make_response
+from flask.json import jsonify
 from flask_apispec import doc, marshal_with, use_kwargs
 from flask_apispec.views import MethodResource
 from flask_jwt_extended import (
@@ -22,6 +24,11 @@ from flask_jwt_extended import (
     get_jwt,
     get_jwt_identity,
     jwt_required,
+)
+from flask_jwt_extended.utils import (
+    set_access_cookies,
+    set_refresh_cookies,
+    unset_jwt_cookies,
 )
 from flask_restful import Resource
 
@@ -57,7 +64,6 @@ class UserRegister(MethodResource, Resource):
 
 
 class User(MethodResource, Resource):
-    # TODO: TO REMOVE
     @doc(description="Get user information.", tags=["User"])
     @marshal_with(UserSchema())
     @jwt_required()
@@ -100,8 +106,20 @@ class UserLogin(MethodResource, Resource):
             if user.confirmed:
                 access_token = create_access_token(user.id, fresh=True)
                 refresh_token = create_refresh_token(user.id)
+
+                @after_this_request
+                def set_cookie_value(response):
+                    set_refresh_cookies(response, refresh_token)
+                    return response
+
                 return (
-                    {"access_token": access_token, "refresh_token": refresh_token},
+                    {
+                        "access_token": access_token,
+                        "refresh_token": refresh_token,
+                        "expires": current_app.config[
+                            "JWT_ACCESS_TOKEN_EXPIRES"
+                        ].seconds,
+                    },
                     HTTPStatus.OK,
                 )
             raise UserException.UserNotConfirmed
@@ -109,6 +127,52 @@ class UserLogin(MethodResource, Resource):
 
 
 class UserLogout(MethodResource, Resource):
+    @doc_with_jwt(description="Logut user.", tags=["User"])
+    @marshal_with(GenericReturnSchema)
+    @jwt_required()
+    def post(self):
+        jti = get_jwt()["jti"]  # jti is "JWT ID", a unique identifier for a JWT.
+        user_id = get_jwt_identity()
+        BLOCKLIST.add(jti)
+
+        @after_this_request
+        def unset_cookie_value(response):
+            unset_jwt_cookies(response)
+            return response
+
+        return {"message": gettext("user_logged_out").format(user_id)}, HTTPStatus.OK
+
+
+class UserLoginToken(MethodResource, Resource):
+    @doc(description="Login user with credentials.", tags=["User"])
+    @use_kwargs(UserLoginPostRequestSchema, location=("json"))
+    @marshal_with(TokenReturnSchema)
+    def post(self, **kwargs):
+        # user_json = request.get_json()
+        user_json = kwargs
+        user_data = UserLoginPostRequestSchema().load(user_json)
+
+        user = UserModel.find_by_username(user_data["username"])
+
+        if user and user.verify_password(user_data["password"]):
+            if user.confirmed:
+                access_token = create_access_token(user.id, fresh=True)
+                refresh_token = create_refresh_token(user.id)
+                return (
+                    {
+                        "access_token": access_token,
+                        "refresh_token": refresh_token,
+                        "expires": current_app.config[
+                            "JWT_ACCESS_TOKEN_EXPIRES"
+                        ].seconds,
+                    },
+                    HTTPStatus.OK,
+                )
+            raise UserException.UserNotConfirmed
+        raise UserException.UserInvalidCredentials
+
+
+class UserLogoutToken(MethodResource, Resource):
     @doc_with_jwt(description="Logut user.", tags=["User"])
     @marshal_with(GenericReturnSchema)
     @jwt_required()
@@ -125,4 +189,7 @@ class TokenRefresh(MethodResource, Resource):
     def post(self):
         user_id = get_jwt_identity()
         new_token = create_access_token(identity=user_id, fresh=False)
-        return {"access_token": new_token}, HTTPStatus.OK
+        return {
+            "access_token": new_token,
+            "expires": current_app.config["JWT_ACCESS_TOKEN_EXPIRES"].seconds,
+        }, HTTPStatus.OK
