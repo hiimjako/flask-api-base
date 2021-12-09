@@ -56,3 +56,5 @@ class UserPutRequestSchema(ma.SQLAlchemySchema):
     surname = auto_field(required=False)
     email = auto_field(required=False)
     avatar = auto_field(required=False)
+    role_id = auto_field(required=False)
+
