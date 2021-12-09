@@ -94,7 +94,7 @@ def create_app(config: str = "development", verbose: bool = True) -> "Flask":
         return jsonify({
             'status': 'error',
             'result': messages
-        }), HTTPStatus.UNPROCESSABLE_ENTITY
+        }), HTTPStatus.BAD_REQUEST
     # @app.after_request
     # def refresh_expiring_jwts(response):
     #     """auto refresh token"""
