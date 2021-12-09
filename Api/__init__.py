@@ -33,6 +33,7 @@ from Api.resources.user import (
     UserLogoutToken,
     UserRegister,
 )
+from http import HTTPStatus
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -79,8 +80,21 @@ def create_app(config: str = "development", verbose: bool = True) -> "Flask":
 
     @app.errorhandler(ValidationError)
     def handle_marshmallow_validation(err):
-        return jsonify(err.messages), 400
+        return jsonify(err.messages), HTTPStatus.BAD_REQUEST
 
+    @app.errorhandler(HTTPStatus.UNPROCESSABLE_ENTITY)
+    def handle_unprocessable_entity(err):
+        exc = getattr(err, 'exc')
+        if exc:
+            messages = exc.messages
+            if 'json' in messages:
+                messages = messages['json']
+        else:
+            messages = ['Invalid request']
+        return jsonify({
+            'status': 'error',
+            'result': messages
+        }), HTTPStatus.UNPROCESSABLE_ENTITY
     # @app.after_request
     # def refresh_expiring_jwts(response):
     #     """auto refresh token"""
