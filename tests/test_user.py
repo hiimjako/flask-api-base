@@ -23,7 +23,7 @@ class SignupTest(BaseTest):
 
     def test_successful_signup(self) -> None:
         response = self.client.post(
-            "/login",
+            "/api/token/login",
             headers={"Content-Type": "application/json"},
             json={
                 "username": "guest",
@@ -60,7 +60,9 @@ class UserRegister(BaseTest):
         }
 
         response = self.client.post(
-            "/register", headers={"Content-Type": "application/json"}, json=user_json
+            "/api/register",
+            headers={"Content-Type": "application/json"},
+            json=user_json,
         )
 
         self.assertEqual(HTTPStatus.CREATED, response.status_code)
@@ -76,6 +78,7 @@ class UserRegister(BaseTest):
                 "surname": "test",
                 "email": "opendrive2.noreply@gmail.com",
                 "username": "guest2",
+                "avatar": None,
                 "role_id": DEFAULT_ROLE,
                 "confirmed": False,
             },
@@ -91,7 +94,9 @@ class UserRegister(BaseTest):
         }
 
         response = self.client.post(
-            "/register", headers={"Content-Type": "application/json"}, json=user_json
+            "/api/register",
+            headers={"Content-Type": "application/json"},
+            json=user_json,
         )
 
         self.assertEqual(HTTPStatus.CONFLICT, response.status_code)
@@ -106,7 +111,9 @@ class UserRegister(BaseTest):
         }
 
         response = self.client.post(
-            "/register", headers={"Content-Type": "application/json"}, json=user_json
+            "/api/register",
+            headers={"Content-Type": "application/json"},
+            json=user_json,
         )
 
         self.assertEqual(HTTPStatus.CONFLICT, response.status_code)

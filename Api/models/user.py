@@ -22,6 +22,7 @@ class UserModel(db.Model):
     name = db.Column(db.String(80), nullable=False)
     surname = db.Column(db.String(80), nullable=False)
     username = db.Column(db.String(80), nullable=False, unique=True)
+    avatar = db.Column(db.String(80), nullable=True, unique=True)
     password = db.Column(db.String(128), nullable=False)
     email = db.Column(db.String(80), nullable=False, unique=True)
     confirmed = db.Column(db.Boolean, default=False)
