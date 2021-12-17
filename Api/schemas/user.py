@@ -1,6 +1,6 @@
 from Api.ma import ma
 from Api.models.user import UserModel
-from marshmallow import Schema, fields, pre_dump
+from marshmallow import Schema, fields
 from marshmallow_sqlalchemy.schema import auto_field
 
 

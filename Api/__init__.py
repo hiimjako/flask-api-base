@@ -1,17 +1,9 @@
-import datetime
 import os
 
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
 from flask import Flask, jsonify
-from flask.helpers import make_response
 from flask_apispec.extension import FlaskApiSpec
-from flask_jwt_extended.internal_utils import get_jwt_manager
-from flask_jwt_extended.utils import (
-    create_access_token,
-    get_jwt_identity,
-    set_access_cookies,
-)
 from flask_mail import Mail
 from flask_restful import Api
 from marshmallow import ValidationError
@@ -21,7 +13,6 @@ from Api.config import config as Config
 from Api.db import db, migrate
 from Api.errors.app import InvalidConfigurationName
 from Api.jwt import jwt
-from Api.ma import ma
 from Api.resources.confirmation import Confirmation
 from Api.resources.user import (
     SelfUser,
@@ -84,17 +75,15 @@ def create_app(config: str = "development", verbose: bool = True) -> "Flask":
 
     @app.errorhandler(HTTPStatus.UNPROCESSABLE_ENTITY)
     def handle_unprocessable_entity(err):
-        exc = getattr(err, 'exc')
+        exc = getattr(err, "exc")
         if exc:
             messages = exc.messages
-            if 'json' in messages:
-                messages = messages['json']
+            if "json" in messages:
+                messages = messages["json"]
         else:
-            messages = ['Invalid request']
-        return jsonify({
-            'status': 'error',
-            'result': messages
-        }), HTTPStatus.BAD_REQUEST
+            messages = ["Invalid request"]
+        return jsonify({"status": "error", "result": messages}), HTTPStatus.BAD_REQUEST
+
     # @app.after_request
     # def refresh_expiring_jwts(response):
     #     """auto refresh token"""

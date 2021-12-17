@@ -6,7 +6,6 @@ from Api.blocklist import BLOCKLIST
 from Api.decorators import admin_required, doc_with_jwt
 from Api.jwt import get_current_user_wrapper
 from Api.libs.strings import gettext
-from Api.models.permission import DEFAULT_ROLE
 from Api.models.user import UserModel
 from Api.schemas.common import GenericReturnSchema
 from Api.schemas.user import (
@@ -16,7 +15,7 @@ from Api.schemas.user import (
     UserPutRequestSchema,
     UserSchema,
 )
-from flask import after_this_request, current_app, make_response
+from flask import after_this_request, current_app
 from flask_apispec import doc, marshal_with, use_kwargs
 from flask_apispec.views import MethodResource
 from flask_jwt_extended import (
@@ -27,7 +26,6 @@ from flask_jwt_extended import (
     jwt_required,
 )
 from flask_jwt_extended.utils import (
-    set_access_cookies,
     set_refresh_cookies,
     unset_jwt_cookies,
 )

@@ -2,7 +2,7 @@ import Api.errors.confirmation as ConfirmationException
 import Api.errors.user as UserException
 from Api.models.user import UserModel
 from Api.schemas.common import GenericReturnSchema
-from flask import make_response, redirect, render_template, request
+from flask import make_response, render_template
 from flask_apispec import doc, marshal_with
 from flask_apispec.views import MethodResource
 from flask_restful import Resource

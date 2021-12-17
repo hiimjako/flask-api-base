@@ -53,6 +53,7 @@ Werkzeug = "==2.0.2"
 [dev-packages]
 black = "==21.12b0"
 coverage = "==6.2"
+pycln = "*"
 
 [requires]
 python_version = "3.9"

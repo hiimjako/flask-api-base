@@ -7,6 +7,9 @@ A base template for flask API with: JWT atuh, postgres, migrations and so on
 install also developer packages
 `pipenv install -d`
 
+Clean unused imports
+`pycln Api/ -a`
+
 # Set linter
 
 Vscode:
