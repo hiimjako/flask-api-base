@@ -213,10 +213,12 @@ class UserRestoreCredentials(MethodResource, Resource):
                 access_token = create_access_token(user.id, fresh=True)
                 refresh_token = create_refresh_token(user.id)
 
+                # Disable all old refresh token that now are invalid
                 for key in redis_client.scan_iter(
                     f"{user.id}:{get_redis_prefix_by_type('refresh')}:*"
                 ):
                     redis_client.delete(key)
+
                 save_token_into_redis("refresh", get_jti(refresh_token), user.id)
 
                 @after_this_request

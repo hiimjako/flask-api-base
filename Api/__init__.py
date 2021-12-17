@@ -81,9 +81,15 @@ def create_app(config: str = "development", verbose: bool = True) -> "Flask":
             messages = exc.messages
             if "json" in messages:
                 messages = messages["json"]
+            try:
+                messages = " ".join(
+                    [list(messages.keys())[0], messages[list(messages.keys())[0]][0]]
+                ).capitalize()
+            except:
+                messages = str(messages)
         else:
-            messages = ["Invalid request"]
-        return jsonify({"status": "error", "result": messages}), HTTPStatus.BAD_REQUEST
+            messages = "Invalid request"
+        return jsonify({"status": "error", "message": messages}), HTTPStatus.BAD_REQUEST
 
     # @app.after_request
     # def refresh_expiring_jwts(response):
