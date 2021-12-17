@@ -49,6 +49,8 @@ MarkupSafe = "==2.0.1"
 PyJWT = "==2.3.0"
 SQLAlchemy = "==1.4.27"
 Werkzeug = "==2.0.2"
+redis = "*"
+flask-redis = "*"
 
 [dev-packages]
 black = "==21.12b0"

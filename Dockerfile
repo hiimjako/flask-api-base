@@ -5,22 +5,21 @@
 
 FROM python:3.9 as base
 
-WORKDIR /app
-
-# create a non root user
-RUN groupadd -r dev && useradd -g dev dev
-RUN chown -R dev:dev /app
-# switch to dev user
-USER dev
-
-RUN mkdir "/uploads" 
-
 RUN apt-get -y update
 RUN apt-get -y install gcc build-essential libpq-dev
+
+# create a non root user
+RUN groupadd -r dev && useradd -m -g dev dev
+WORKDIR /home/dev/app
+COPY . .
+RUN mkdir -p "/uploads" 
 
 COPY requirements.txt ./
 RUN echo "gunicorn" >> requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . /app
-ENTRYPOINT ["gunicorn", "-w", "3", "OpenDrive:create_app('production')", "2", "-b :5000"]
+# switch to dev user
+RUN chown -R dev:dev /home/dev/app
+USER dev
+
+ENTRYPOINT ["gunicorn", "-w", "3", "Api:create_app('production')", "2", "-b :5000"]

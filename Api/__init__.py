@@ -10,7 +10,7 @@ from marshmallow import ValidationError
 
 import Api.errors as APIException
 from Api.config import config as Config
-from Api.db import db, migrate
+from Api.db import db, migrate, redis_client
 from Api.errors.app import InvalidConfigurationName
 from Api.jwt import jwt
 from Api.resources.confirmation import Confirmation
@@ -19,10 +19,9 @@ from Api.resources.user import (
     TokenRefresh,
     User,
     UserLogin,
-    UserLoginToken,
     UserLogout,
-    UserLogoutToken,
     UserRegister,
+    UserRestoreCredentials,
 )
 from http import HTTPStatus
 
@@ -42,7 +41,7 @@ def create_app(config: str = "development", verbose: bool = True) -> "Flask":
         Config[config_name].verbose()
 
     app = Flask(__name__, static_url_path="/static")
-    app.config.from_object(Config[config_name])
+    app.config.from_object(Config[config_name]())
     app.config.update(
         {
             "APISPEC_SPEC": APISpec(
@@ -60,6 +59,7 @@ def create_app(config: str = "development", verbose: bool = True) -> "Flask":
 
     api = Api(app, "/api", errors=APIException.errors)
     db.init_app(app)
+    redis_client.init_app(app)
     migrate.init_app(app, db)
     mail.init_app(app)
     jwt.init_app(app)
@@ -105,10 +105,9 @@ def create_app(config: str = "development", verbose: bool = True) -> "Flask":
 
     api.add_resource(UserRegister, "/register")
     api.add_resource(SelfUser, "/user")
+    api.add_resource(UserRestoreCredentials, "/user/credential")
     api.add_resource(User, "/user/<int:user_id>")
-    api.add_resource(UserLoginToken, "/token/login")
     api.add_resource(TokenRefresh, "/token/refresh")
-    api.add_resource(UserLogoutToken, "/token/logout")
     api.add_resource(UserLogin, "/login")
     api.add_resource(UserLogout, "/logout")
     api.add_resource(Confirmation, "/user_confirm/<string:confirmation_token>")
@@ -116,8 +115,7 @@ def create_app(config: str = "development", verbose: bool = True) -> "Flask":
     docs.register(User)
     docs.register(SelfUser)
     docs.register(UserRegister)
-    docs.register(UserLogoutToken)
-    docs.register(UserLoginToken)
+    docs.register(UserRestoreCredentials)
     docs.register(Confirmation)
 
     return app

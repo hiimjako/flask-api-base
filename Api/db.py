@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
 from flask_migrate import Migrate
+from flask_redis import FlaskRedis
 
 convention = {
     "ix": "ix_%(column_0_label)s",
@@ -13,3 +14,4 @@ convention = {
 metadata = MetaData(naming_convention=convention)
 db = SQLAlchemy(metadata=metadata)
 migrate = Migrate()
+redis_client = FlaskRedis()
