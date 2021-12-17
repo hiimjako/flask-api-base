@@ -8,6 +8,7 @@ from Api.jwt import (
     get_current_user_wrapper,
     get_expire_time_by_type,
     get_redis_prefix_by_type,
+    save_token_into_redis,
 )
 from Api.libs.strings import gettext
 from Api.models.user import UserModel
@@ -142,11 +143,8 @@ class UserLogin(MethodResource, Resource):
             if user.confirmed:
                 access_token = create_access_token(user.id, fresh=True)
                 refresh_token = create_refresh_token(user.id)
-                redis_client.set(
-                    f"{get_redis_prefix_by_type('refresh')}:{get_jti(refresh_token)}",
-                    user.id,
-                    ex=get_expire_time_by_type("refresh"),
-                )
+
+                save_token_into_redis("refresh", get_jti(refresh_token), user.id)
 
                 @after_this_request
                 def set_cookie_value(response):
@@ -215,6 +213,12 @@ class UserRestoreCredentials(MethodResource, Resource):
                 access_token = create_access_token(user.id, fresh=True)
                 refresh_token = create_refresh_token(user.id)
 
+                for key in redis_client.scan_iter(
+                    f"{user.id}:{get_redis_prefix_by_type('refresh')}:*"
+                ):
+                    redis_client.delete(key)
+                save_token_into_redis("refresh", get_jti(refresh_token), user.id)
+
                 @after_this_request
                 def set_cookie_value(response):
                     set_refresh_cookies(response, refresh_token)
@@ -242,19 +246,11 @@ class UserLogout(MethodResource, Resource):
         jwt_type = get_jwt()["type"]
         user_id = get_jwt_identity()
 
-        redis_client.set(
-            f"{get_redis_prefix_by_type(jwt_type)}:{jti}",
-            "",
-            ex=get_expire_time_by_type(jwt_type),
-        )
+        save_token_into_redis(jwt_type, jti, user_id)
 
         try:
             refresh_token = request.cookies["refresh_token_cookie"]
-            redis_client.set(
-                f"{get_redis_prefix_by_type('refresh')}:{get_jti(refresh_token)}",
-                user_id,
-                ex=get_expire_time_by_type("refresh"),
-            )
+            save_token_into_redis("refresh", get_jti(refresh_token), user_id)
         except:
             print(f"[WARNING] On logout no refresh_token given, user: {user_id}")
 

@@ -13,6 +13,14 @@ JWT_PREFIX_ACCESS_TOKEN_REDIS = "access"
 JWT_PREFIX_REFRESH_TOKEN_REDIS = "refresh"
 
 
+def save_token_into_redis(jwt_type: str, jti: str, user_id: int) -> None:
+    redis_client.set(
+        f"{user_id}:{get_redis_prefix_by_type(jwt_type)}:{jti}",
+        "",
+        ex=get_expire_time_by_type(jwt_type),
+    )
+
+
 def get_expire_time_by_type(jwt_type: str) -> timedelta:
     if jwt_type == "access":
         return current_app.config["JWT_ACCESS_TOKEN_EXPIRES"]
@@ -32,8 +40,9 @@ def get_redis_prefix_by_type(jwt_type: str) -> str:
 def check_if_token_in_blocklist(jwt_header, jwt_payload) -> bool:
     jti = jwt_payload["jti"]
     jwt_type = jwt_payload["type"]
+    identity = jwt_payload["sub"]
     prefix = get_redis_prefix_by_type(jwt_type)
-    token_in_redis = redis_client.get(f"{prefix}:{jti}")
+    token_in_redis = redis_client.get(f"{identity}:{prefix}:{jti}")
 
     if jwt_type == "access":
         return token_in_redis is not None

@@ -53,6 +53,7 @@ def create_app(config: str = "development", verbose: bool = True) -> "Flask":
             "APISPEC_SWAGGER_URL": "/swagger/",  # URI to access API Doc JSON
             "APISPEC_SWAGGER_UI_URL": "/swagger-ui/",  # URI to access UI of API Doc
             "SQLALCHEMY_TRACK_MODIFICATIONS": False,
+            "JWT_ERROR_MESSAGE_KEY": "message",
             # "PROPAGATE_EXCEPTIONS": True
         }
     )
