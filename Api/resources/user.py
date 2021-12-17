@@ -2,9 +2,13 @@ import traceback
 from http import HTTPStatus
 
 import Api.errors.user as UserException
-from Api.blocklist import BLOCKLIST
+from Api import redis_client
 from Api.decorators import admin_required, doc_with_jwt
-from Api.jwt import get_current_user_wrapper
+from Api.jwt import (
+    get_current_user_wrapper,
+    get_expire_time_by_type,
+    get_redis_prefix_by_type,
+)
 from Api.libs.strings import gettext
 from Api.models.user import UserModel
 from Api.schemas.common import GenericReturnSchema
@@ -14,8 +18,9 @@ from Api.schemas.user import (
     UserPostRequestSchema,
     UserPutRequestSchema,
     UserSchema,
+    UserUpdateCredentials,
 )
-from flask import after_this_request, current_app
+from flask import after_this_request
 from flask_apispec import doc, marshal_with, use_kwargs
 from flask_apispec.views import MethodResource
 from flask_jwt_extended import (
@@ -24,11 +29,9 @@ from flask_jwt_extended import (
     get_jwt,
     get_jwt_identity,
     jwt_required,
+    get_jti,
 )
-from flask_jwt_extended.utils import (
-    set_refresh_cookies,
-    unset_jwt_cookies,
-)
+from flask_jwt_extended.utils import set_refresh_cookies, unset_jwt_cookies
 from flask_restful import Resource
 
 
@@ -50,7 +53,7 @@ class UserRegister(MethodResource, Resource):
 
         try:
             # FIXME: set default
-            user.create_user()
+            user.save_user_and_update_password()
             user.send_confirmation_email()
             return {"message": gettext("user_registered")}, HTTPStatus.CREATED
         except UserException.UserInvalidEmail:
@@ -139,6 +142,11 @@ class UserLogin(MethodResource, Resource):
             if user.confirmed:
                 access_token = create_access_token(user.id, fresh=True)
                 refresh_token = create_refresh_token(user.id)
+                redis_client.set(
+                    f"{get_redis_prefix_by_type('refresh')}:{get_jti(refresh_token)}",
+                    user.id,
+                    ex=get_expire_time_by_type("refresh"),
+                )
 
                 @after_this_request
                 def set_cookie_value(response):
@@ -149,9 +157,74 @@ class UserLogin(MethodResource, Resource):
                     {
                         "access_token": access_token,
                         "refresh_token": refresh_token,
-                        "expires": current_app.config[
-                            "JWT_ACCESS_TOKEN_EXPIRES"
-                        ].seconds,
+                        "expires": get_expire_time_by_type("access").seconds,
+                    },
+                    HTTPStatus.OK,
+                )
+            raise UserException.UserNotConfirmed
+        raise UserException.UserInvalidCredentials
+
+
+class UserRestoreCredentials(MethodResource, Resource):
+    @doc(description="Restore user credentials.", tags=["User"])
+    @use_kwargs(UserLoginPostRequestSchema, location=("json"))
+    @marshal_with(TokenReturnSchema)
+    def post(self, **kwargs):
+        # user_json = request.get_json()
+        user_json = kwargs
+        user_data = UserLoginPostRequestSchema().load(user_json)
+
+        user = UserModel.find_by_username(user_data["username"])
+
+        if user and user.verify_password(user_data["password"]):
+            if user.confirmed:
+                access_token = create_access_token(user.id, fresh=True)
+                refresh_token = create_refresh_token(user.id)
+
+                @after_this_request
+                def set_cookie_value(response):
+                    set_refresh_cookies(response, refresh_token)
+                    return response
+
+                return (
+                    {
+                        "access_token": access_token,
+                        "refresh_token": refresh_token,
+                        "expires": get_expire_time_by_type("access").seconds,
+                    },
+                    HTTPStatus.OK,
+                )
+            raise UserException.UserNotConfirmed
+        raise UserException.UserInvalidCredentials
+
+    @doc_with_jwt(description="Update user credentials.", tags=["User"])
+    @use_kwargs(UserUpdateCredentials, location=("json"))
+    @marshal_with(TokenReturnSchema)
+    @jwt_required(fresh=True)
+    def post(self, **kwargs):
+        user = get_current_user_wrapper()
+        if not user:
+            raise UserException.UserNotFound
+
+        user_json = kwargs
+
+        if user and user.verify_password(user_json["old_password"]):
+            if user.confirmed:
+                user.password = user_json["new_password"]
+                user.save_user_and_update_password()
+                access_token = create_access_token(user.id, fresh=True)
+                refresh_token = create_refresh_token(user.id)
+
+                @after_this_request
+                def set_cookie_value(response):
+                    set_refresh_cookies(response, refresh_token)
+                    return response
+
+                return (
+                    {
+                        "access_token": access_token,
+                        "refresh_token": refresh_token,
+                        "expires": get_expire_time_by_type("access").seconds,
                     },
                     HTTPStatus.OK,
                 )
@@ -166,8 +239,14 @@ class UserLogout(MethodResource, Resource):
     def post(self):
         # https://flask-jwt-extended.readthedocs.io/en/stable/blocklist_and_token_revoking/
         jti = get_jwt()["jti"]  # jti is "JWT ID", a unique identifier for a JWT.
+        jwt_type = get_jwt()["type"]
+
         user_id = get_jwt_identity()
-        BLOCKLIST.add(jti)
+        redis_client.set(
+            f"{get_redis_prefix_by_type(jwt_type)}:{jti}",
+            "",
+            ex=get_expire_time_by_type(jwt_type),
+        )
 
         @after_this_request
         def unset_cookie_value(response):
@@ -177,53 +256,14 @@ class UserLogout(MethodResource, Resource):
         return {"message": gettext("user_logged_out").format(user_id)}, HTTPStatus.OK
 
 
-class UserLoginToken(MethodResource, Resource):
-    @doc(description="Login user with credentials.", tags=["User"])
-    @use_kwargs(UserLoginPostRequestSchema, location=("json"))
-    @marshal_with(TokenReturnSchema)
-    def post(self, **kwargs):
-        # user_json = request.get_json()
-        user_json = kwargs
-        user_data = UserLoginPostRequestSchema().load(user_json)
-
-        user = UserModel.find_by_username(user_data["username"])
-
-        if user and user.verify_password(user_data["password"]):
-            if user.confirmed:
-                access_token = create_access_token(user.id, fresh=True)
-                refresh_token = create_refresh_token(user.id)
-                return (
-                    {
-                        "access_token": access_token,
-                        "refresh_token": refresh_token,
-                        "expires": current_app.config[
-                            "JWT_ACCESS_TOKEN_EXPIRES"
-                        ].seconds,
-                    },
-                    HTTPStatus.OK,
-                )
-            raise UserException.UserNotConfirmed
-        raise UserException.UserInvalidCredentials
-
-
-class UserLogoutToken(MethodResource, Resource):
-    @doc_with_jwt(description="Logut user.", tags=["User"])
-    @marshal_with(GenericReturnSchema)
-    @jwt_required()
-    def post(self):
-        jti = get_jwt()["jti"]  # jti is "JWT ID", a unique identifier for a JWT.
-        user_id = get_jwt_identity()
-        BLOCKLIST.add(jti)
-        return {"message": gettext("user_logged_out").format(user_id)}, HTTPStatus.OK
-
-
 class TokenRefresh(MethodResource, Resource):
     @marshal_with(TokenReturnSchema)
     @jwt_required(refresh=True)
     def post(self):
+        """If @jwt_required(refresh=True) i get in get_jwt() the refresh token"""
         user_id = get_jwt_identity()
         new_token = create_access_token(identity=user_id, fresh=False)
         return {
             "access_token": new_token,
-            "expires": current_app.config["JWT_ACCESS_TOKEN_EXPIRES"].seconds,
+            "expires": get_expire_time_by_type("access").seconds,
         }, HTTPStatus.OK
