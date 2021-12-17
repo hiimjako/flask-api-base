@@ -20,7 +20,7 @@ from Api.schemas.user import (
     UserSchema,
     UserUpdateCredentials,
 )
-from flask import after_this_request
+from flask import after_this_request, request
 from flask_apispec import doc, marshal_with, use_kwargs
 from flask_apispec.views import MethodResource
 from flask_jwt_extended import (
@@ -240,13 +240,23 @@ class UserLogout(MethodResource, Resource):
         # https://flask-jwt-extended.readthedocs.io/en/stable/blocklist_and_token_revoking/
         jti = get_jwt()["jti"]  # jti is "JWT ID", a unique identifier for a JWT.
         jwt_type = get_jwt()["type"]
-
         user_id = get_jwt_identity()
+
         redis_client.set(
             f"{get_redis_prefix_by_type(jwt_type)}:{jti}",
             "",
             ex=get_expire_time_by_type(jwt_type),
         )
+
+        try:
+            refresh_token = request.cookies["refresh_token_cookie"]
+            redis_client.set(
+                f"{get_redis_prefix_by_type('refresh')}:{get_jti(refresh_token)}",
+                user_id,
+                ex=get_expire_time_by_type("refresh"),
+            )
+        except:
+            print(f"[WARNING] On logout no refresh_token given, user: {user_id}")
 
         @after_this_request
         def unset_cookie_value(response):

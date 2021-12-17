@@ -33,9 +33,15 @@ def check_if_token_in_blocklist(jwt_header, jwt_payload) -> bool:
     jti = jwt_payload["jti"]
     jwt_type = jwt_payload["type"]
     prefix = get_redis_prefix_by_type(jwt_type)
-
     token_in_redis = redis_client.get(f"{prefix}:{jti}")
-    return token_in_redis is not None
+
+    if jwt_type == "access":
+        return token_in_redis is not None
+
+    if jwt_type == "refresh":
+        return token_in_redis is None
+
+    return True
 
 
 @jwt.user_identity_loader
