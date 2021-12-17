@@ -19,7 +19,7 @@ class SignupTest(BaseTest):
             "confirmed": True,
         }
         user = UserSchema().load(user_json)
-        user.create_user()
+        user.save_user_and_update_password()
 
     def test_successful_signup(self) -> None:
         response = self.client.post(

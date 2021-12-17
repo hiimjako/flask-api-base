@@ -10,6 +10,14 @@ class TokenReturnSchema(Schema):
     expires = fields.Integer(required=False, description="The jwt expiration time")
 
 
+class UserUpdateCredentials(ma.SQLAlchemySchema):
+    class Meta:
+        model = UserModel
+
+    old_password = fields.String(required=True, description="The old password")
+    new_password = auto_field("password", attribute="new_password")
+
+
 class UserLoginPostRequestSchema(ma.SQLAlchemySchema):
     # api_type = fields.String(required=True, description="API type of awesome API")
     # Il required sta in sqlachymy, se è nullable li è required qui
@@ -57,4 +65,3 @@ class UserPutRequestSchema(ma.SQLAlchemySchema):
     email = auto_field(required=False)
     avatar = auto_field(required=False)
     role_id = auto_field(required=False)
-
