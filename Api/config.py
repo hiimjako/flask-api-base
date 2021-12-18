@@ -89,6 +89,8 @@ class DevelopmentConfig(Config):
 class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "sqlite://"
+    REDIS_DEFAULT_HOST = "127.0.0.1"
+    REDIS_DEFAULT_DB = 10
 
     @classmethod
     def verbose(cls):

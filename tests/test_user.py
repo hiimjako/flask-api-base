@@ -23,7 +23,7 @@ class SignupTest(BaseTest):
 
     def test_successful_signup(self) -> None:
         response = self.client.post(
-            "/api/token/login",
+            "/api/login",
             headers={"Content-Type": "application/json"},
             json={
                 "username": "guest",

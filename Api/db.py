@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from redis import Redis
 from sqlalchemy import MetaData
 from flask_migrate import Migrate
 from flask_redis import FlaskRedis
@@ -14,4 +15,4 @@ convention = {
 metadata = MetaData(naming_convention=convention)
 db = SQLAlchemy(metadata=metadata)
 migrate = Migrate()
-redis_client = FlaskRedis()
+redis_client: Redis = FlaskRedis()

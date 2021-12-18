@@ -1,5 +1,5 @@
 from flask_testing import TestCase
-from Api import create_app, db
+from Api import create_app, db, redis_client
 
 # https://pythonhosted.org/Flask-Testing/
 
@@ -23,3 +23,4 @@ class BaseTest(TestCase):
     def tearDown(self):
         db.session.remove()
         db.drop_all()
+        redis_client.flushdb()
