@@ -30,10 +30,9 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 mail = Mail()
 
 
-def create_app(config: str = "development", verbose: bool = True) -> "Flask":
+def create_app(config_name: str = "development", verbose: bool = True) -> "Flask":
     """Creates the main flask app"""
-    config_name = config
-    if not isinstance(config, str):
+    if not isinstance(config_name, str):
         config_name = os.environ.get("FLASK_ENV") or "development"
     if config_name not in Config:
         raise InvalidConfigurationName(config_name)
@@ -45,7 +44,7 @@ def create_app(config: str = "development", verbose: bool = True) -> "Flask":
     app.config.update(
         {
             "APISPEC_SPEC": APISpec(
-                title="Awesome Project",
+                title="Flask api",
                 version="v1",
                 plugins=[MarshmallowPlugin()],
                 openapi_version="2.0.0",
