@@ -59,7 +59,7 @@ class UserRegister(MethodResource, Resource):
             return {"message": gettext("user_registered")}, HTTPStatus.CREATED
         except UserException.UserInvalidEmail:
             user.delete_from_db()  # rollback
-            raise UserException.UserInvalidEmail
+            raise
         except:  # failed to save user to db
             traceback.print_exc()
             user.delete_from_db()  # rollback

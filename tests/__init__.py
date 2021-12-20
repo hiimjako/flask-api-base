@@ -12,6 +12,13 @@ class BaseTest(TestCase):
 
     def setUp(self):
         self.app = create_app(TEST_CONFIG, verbose=False)
+        redis_keys = redis_client.keys()
+        # Prevent to flush production redis
+        if len(redis_keys) > 0:
+            raise SystemExit(
+                f"Redis db '{self.app.config['REDIS_DB']}' is not empty (found {len(redis_keys)} keys), exiting"
+            )
+
         db.create_all()
         try:
             self.populate_db()

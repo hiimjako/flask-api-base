@@ -34,10 +34,10 @@ class Config:
     POSTGRES_PORT = get_env_path("POSTGRES_PORT") or 5432
     POSTGRES_DB = get_env_path("POSTGRES_DB")
 
-    REDIS_DEFAULT_HOST = get_env_path("REDIS_DEFAULT_HOST") or "127.0.0.1"
-    REDIS_DEFAULT_PORT = get_env_path("REDIS_DEFAULT_PORT") or 6379
-    REDIS_DEFAULT_PASSWORD = get_env_path("REDIS_DEFAULT_PASSWORD")
-    REDIS_DEFAULT_DB = get_env_path("REDIS_DEFAULT_DB") or 0
+    REDIS_HOST = get_env_path("REDIS_HOST") or "127.0.0.1"
+    REDIS_PORT = get_env_path("REDIS_PORT") or 6379
+    REDIS_PASSWORD = get_env_path("REDIS_PASSWORD")
+    REDIS_DB = get_env_path("REDIS_DB") or 0
 
     MAIL_SERVER = "smtp.gmail.com"
     MAIL_PORT = 587
@@ -60,7 +60,7 @@ class Config:
 
     @property
     def REDIS_URL(self):
-        return f"redis://:{self.REDIS_DEFAULT_PASSWORD}@{self.REDIS_DEFAULT_HOST}:{self.REDIS_DEFAULT_PORT}/{self.REDIS_DEFAULT_DB}"
+        return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
 
 class ProductionConfig(Config):
@@ -75,7 +75,7 @@ class DevelopmentConfig(Config):
     FLASK_ENV = "development"
     FLASK_RUN_HOST = "127.0.0.1"
     POSTGRES_URL = "127.0.0.1"
-    REDIS_DEFAULT_HOST = "127.0.0.1"
+    REDIS_HOST = "127.0.0.1"
     DEBUG = True
     JWT_COOKIE_SECURE = False
     # Only to debug purpose
@@ -89,8 +89,8 @@ class DevelopmentConfig(Config):
 class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "sqlite://"
-    REDIS_DEFAULT_HOST = "127.0.0.1"
-    REDIS_DEFAULT_DB = 10
+    REDIS_HOST = "127.0.0.1"
+    REDIS_DB = 10
 
     @classmethod
     def verbose(cls):
