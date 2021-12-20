@@ -22,4 +22,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN chown -R dev:dev /home/dev/app
 USER dev
 
-ENTRYPOINT ["gunicorn", "-w", "3", "Api:create_app('production')", "2", "-b :5000"]
+ENTRYPOINT ["gunicorn", "-w", "3", "Api:create_app()", "2", "-b :5000"]

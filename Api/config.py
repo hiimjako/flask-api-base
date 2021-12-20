@@ -1,16 +1,9 @@
 from datetime import timedelta
-from os import environ, path
+from os import path
 
 from Api.libs.env import get_env_path
 
 basedir = path.abspath(path.dirname(__file__))
-
-# Try better handling
-if path.exists(".env"):
-    for line in open(".env"):
-        var = line.strip().split("=")
-        if len(var) == 2:
-            environ[var[0]] = var[1].replace('"', "")
 
 
 class Config:
@@ -73,9 +66,6 @@ class ProductionConfig(Config):
 
 class DevelopmentConfig(Config):
     FLASK_ENV = "development"
-    FLASK_RUN_HOST = "127.0.0.1"
-    POSTGRES_URL = "127.0.0.1"
-    REDIS_HOST = "127.0.0.1"
     DEBUG = True
     JWT_COOKIE_SECURE = False
     # Only to debug purpose

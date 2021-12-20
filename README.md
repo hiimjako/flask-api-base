@@ -4,6 +4,9 @@ A base template for flask API with: JWT atuh, postgres, migrations and so on
 
 # Develop
 
+Install docker for development
+`docker-compose -f docker-compose-dev.yml up`
+
 install also developer packages
 `pipenv install -d`
 
