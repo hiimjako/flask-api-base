@@ -24,5 +24,5 @@ class Mail:
             msg.html = html
             try:
                 Api.mail.send(msg)
-            except:
+            except:  # pragma: no cover
                 raise UserInvalidEmail

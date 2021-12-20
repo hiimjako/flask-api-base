@@ -14,7 +14,7 @@ class BaseTest(TestCase):
         self.app = create_app(TEST_CONFIG, verbose=False)
         redis_keys = redis_client.keys()
         # Prevent to flush production redis
-        if len(redis_keys) > 0:
+        if len(redis_keys) > 0:  # pragma: no cover
             raise SystemExit(
                 f"Redis db '{self.app.config['REDIS_DB']}' is not empty (found {len(redis_keys)} keys), exiting"
             )

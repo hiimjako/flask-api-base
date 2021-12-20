@@ -44,7 +44,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     @classmethod
-    def verbose(app):
+    def verbose(app):  # pragma: no cover
         pass
 
     @property
@@ -73,7 +73,7 @@ class DevelopmentConfig(Config):
 
     @classmethod
     def verbose(cls):
-        print("THIS APP IS IN DEBUG MODE")
+        print("THIS APP IS IN DEVELOPMENT MODE")
 
 
 class TestingConfig(Config):
@@ -84,7 +84,7 @@ class TestingConfig(Config):
 
     @classmethod
     def verbose(cls):
-        print("THIS APP IS IN TEST MODE.")
+        print("THIS APP IS IN TEST MODE")
 
 
 config = {

@@ -29,6 +29,7 @@ class RoleModel(db.Model):
 
 # Find better way, doesnt works with flask db upgrade
 # maybe better put it into migrations
+# TODO: move into migrations
 @event.listens_for(RoleModel.__table__, "after_create")
 def insert_initial_values(*args, **kwargs):
     db.session.add(RoleModel(name="admin", priority=Permission.ADMINISTER))
