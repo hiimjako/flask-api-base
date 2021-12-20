@@ -19,12 +19,20 @@ class RoleModel(db.Model):
     priority = db.Column(db.Integer, unique=True)
     # users = db.relationship("UserModel", backref="role", lazy="dynamic")
 
+    def save_to_db(self) -> None:
+        db.session.add(self)
+        db.session.commit()
+
+    def delete_from_db(self) -> None:
+        db.session.delete(self)
+        db.session.commit()
+
     @classmethod
     def find_by_name(cls, name: str) -> "RoleModel":
         return cls.query.filter_by(name=name).first()
 
     def __repr__(self):
-        return "<Role '%s'>" % self.name
+        return f"<Role '{self.name}'>"
 
 
 # Find better way, doesnt works with flask db upgrade

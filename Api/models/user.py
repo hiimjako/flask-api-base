@@ -120,3 +120,6 @@ class UserModel(db.Model):
     def delete_from_db(self) -> None:
         db.session.delete(self)
         db.session.commit()
+
+    def __repr__(self):
+        return f"<User ('{self.username}', '{self.email}')>"
