@@ -14,9 +14,12 @@ WORKDIR /home/dev/app
 COPY . .
 RUN mkdir -p "/uploads" 
 
-COPY requirements.txt ./
-RUN echo "gunicorn" >> requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# RUN pip install --no-cache-dir -r requirements.txt
+# RUN pipenv install $(test "$FLASK_ENV" == production || echo "--dev") --system --deploy --ignore-pipfile
+RUN pip install pipenv  \
+    && pipenv lock --keep-outdated --requirements > requirements.txt \
+    && echo "gunicorn" >> requirements.txt \
+    && pip install -r requirements.txt
 
 # switch to dev user
 RUN chown -R dev:dev /home/dev/app
