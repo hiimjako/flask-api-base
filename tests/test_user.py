@@ -6,6 +6,11 @@ from Api.schemas.user import UserSchema
 
 from tests import BaseTest
 
+from flask_jwt_extended import (
+    create_access_token,
+    create_refresh_token,
+)
+
 
 class UserModelTest(BaseTest):
     def populate_db(self):
@@ -19,7 +24,7 @@ class UserModelTest(BaseTest):
             "confirmed": True,
         }
         user: UserModel = UserSchema().load(user_json)
-        user.save_to_db()
+        user.save_user_and_update_password()
         user_json = {
             "name": "Guest",
             "surname": "test",
@@ -30,7 +35,7 @@ class UserModelTest(BaseTest):
             "confirmed": True,
         }
         user: UserModel = UserSchema().load(user_json)
-        user.save_to_db()
+        user.save_user_and_update_password()
 
     def test_repr(self) -> None:
         ret = UserModel.find_by_username("guest")
@@ -42,7 +47,6 @@ class UserModelTest(BaseTest):
         assert ret.name == "Guest"
         assert ret.surname == "test"
         assert ret.username == "guest"
-        assert ret.password == "1234"
         assert ret.email == "opendrive.noreply@gmail.com"
         assert ret.role_id == 1
         assert ret.confirmed == True
@@ -130,6 +134,17 @@ class SignupTest(BaseTest):
         }
         user: UserModel = UserSchema().load(user_json)
         user.save_user_and_update_password()
+        user_json = {
+            "name": "Not confirmed",
+            "surname": "user",
+            "username": "not_confirmed_user",
+            "password": "1234",
+            "email": "opendrive.noreply2@gmail.com",
+            "role_id": 1,
+            "confirmed": False,
+        }
+        user: UserModel = UserSchema().load(user_json)
+        user.save_user_and_update_password()
 
     def test_successful_signup(self) -> None:
         response = self.client.post(
@@ -146,8 +161,36 @@ class SignupTest(BaseTest):
         assert "refresh_token" in response.json
         self.assertEqual(HTTPStatus.OK, response.status_code)
 
+    def test_invalid_credentials(self) -> None:
+        response = self.client.post(
+            "/api/login",
+            headers={"Content-Type": "application/json"},
+            json={
+                "username": "guest",
+                "password": "wrong password",
+            },
+        )
 
-class UserRegister(BaseTest):
+        assert "message" in response.json
+        assert response.json["message"] == "User credentials invalid."
+        self.assertEqual(HTTPStatus.UNAUTHORIZED, response.status_code)
+
+    def test_not_confirmed(self) -> None:
+        response = self.client.post(
+            "/api/login",
+            headers={"Content-Type": "application/json"},
+            json={
+                "username": "not_confirmed_user",
+                "password": "1234",
+            },
+        )
+
+        assert "message" in response.json
+        assert response.json["message"] == "User not yet confirmed."
+        self.assertEqual(HTTPStatus.BAD_REQUEST, response.status_code)
+
+
+class UserRegisterTest(BaseTest):
     def populate_db(self):
         user_json = {
             "name": "Guest",
@@ -158,7 +201,7 @@ class UserRegister(BaseTest):
             "role_id": 1,
         }
         user: UserModel = UserSchema().load(user_json)
-        user.save_to_db()
+        user.save_user_and_update_password()
 
     def test_successful_register(self) -> None:
         user_json = {
@@ -194,7 +237,7 @@ class UserRegister(BaseTest):
             },
         )
 
-    def test_wrong_email(self) -> None:
+    def test_unique_email(self) -> None:
         user_json = {
             "name": "Guest",
             "surname": "test",
@@ -211,7 +254,7 @@ class UserRegister(BaseTest):
 
         self.assertEqual(HTTPStatus.CONFLICT, response.status_code)
 
-    def test_wrong_username(self) -> None:
+    def test_unique_username(self) -> None:
         user_json = {
             "name": "Guest",
             "surname": "test",
@@ -227,3 +270,68 @@ class UserRegister(BaseTest):
         )
 
         self.assertEqual(HTTPStatus.CONFLICT, response.status_code)
+
+
+class UserRestoreCredentialsTest(BaseTest):
+    def populate_db(self):
+        user_json = {
+            "name": "Guest",
+            "surname": "test",
+            "username": "guest",
+            "password": "old1234",
+            "email": "opendrive.noreply@gmail.com",
+            "role_id": 1,
+            "confirmed": True,
+        }
+        user: UserModel = UserSchema().load(user_json)
+        user.save_user_and_update_password()
+
+        self.user_token = {
+            "access_token": create_access_token(user.id, fresh=True),
+            "refresh_token": create_refresh_token(user.id),
+        }
+
+    def test_update_password(self) -> None:
+        response = self.client.put(
+            "/api/user/credential",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.user_token['access_token']}",
+            },
+            json={"old_password": "old1234", "new_password": "test1234"},
+        )
+
+        self.assertEqual(HTTPStatus.OK, response.status_code)
+
+        user = UserModel.find_by_username("guest")
+        res = user.verify_password("test1234")
+        assert res == True
+
+    def test_update_password_fresh_token_needed(self) -> None:
+        user = UserModel.find_by_username("guest")
+        response = self.client.put(
+            "/api/user/credential",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {create_access_token(user.id, fresh=False)}",
+            },
+            json={"old_password": "old1234", "new_password": "test1234"},
+        )
+
+        assert "message" in response.json
+        assert response.json["message"] == "Fresh token required"
+        self.assertEqual(HTTPStatus.UNAUTHORIZED, response.status_code)
+
+    def test_update_password_invalid_user(self) -> None:
+        response = self.client.put(
+            "/api/user/credential",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {create_access_token(20, fresh=True)}",
+            },
+            json={"old_password": "old1234", "new_password": "test1234"},
+        )
+
+        assert "message" in response.json
+        assert response.json["message"] == "User not found."
+        self.assertEqual(HTTPStatus.NOT_FOUND, response.status_code)

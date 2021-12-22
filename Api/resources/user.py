@@ -164,10 +164,14 @@ class UserLogin(MethodResource, Resource):
 
 
 class UserRestoreCredentials(MethodResource, Resource):
-    @doc(description="Restore user credentials.", tags=["User"])
+    @doc(
+        description="Restore user credentials sending email to generate a new one.",
+        tags=["User"],
+    )
     @use_kwargs(UserLoginPostRequestSchema, location=("json"))
     @marshal_with(TokenReturnSchema)
     def post(self, **kwargs):
+        # TODO: send email and new password
         # user_json = request.get_json()
         user_json = kwargs
         user_data = UserLoginPostRequestSchema().load(user_json)
@@ -199,7 +203,7 @@ class UserRestoreCredentials(MethodResource, Resource):
     @use_kwargs(UserUpdateCredentials, location=("json"))
     @marshal_with(TokenReturnSchema)
     @jwt_required(fresh=True)
-    def post(self, **kwargs):
+    def put(self, **kwargs):
         user = get_current_user_wrapper()
         if not user:
             raise UserException.UserNotFound

@@ -7,6 +7,11 @@ TEST_CONFIG = "test"
 
 
 class BaseTest(TestCase):
+    user_token: dict[str, str] = {
+        "access_token": None,
+        "refresh_token": None,
+    }
+
     def create_app(self):
         return create_app(TEST_CONFIG, verbose=False)
 
