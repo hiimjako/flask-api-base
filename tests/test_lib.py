@@ -1,6 +1,5 @@
-from Api.errors.user import UserInvalidEmail
 from tests import BaseTest
-from Api.libs import env, mail
+from Api.libs import env
 from unittest.mock import patch, call
 from os import environ
 

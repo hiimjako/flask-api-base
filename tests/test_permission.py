@@ -1,4 +1,3 @@
-from http import HTTPStatus
 from Api.schemas.permission import RoleSchema, RoleModel
 
 from tests import BaseTest

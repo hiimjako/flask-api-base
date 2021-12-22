@@ -1,0 +1,19 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 21.12b0
+    hooks:
+      - id: black
+        name: black-lint
+        entry: black
+        args: ["api/", "tests/"]
+        types: [python]
+        language_version: python3.9
+  - repo: https://github.com/hadialqattan/pycln
+    rev: v1.1.0
+    hooks:
+      - id: pycln
+        name: pycln-lint
+        entry: pycln
+        args: ["api/", "tests/", "-a"]
+        types: [python]
+        language_version: python3.9
