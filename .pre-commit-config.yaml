@@ -21,8 +21,8 @@ repos:
     hooks:
       - id: unittest
         name: unittest
-        entry: python
-        args: ["-m", "unittest"]
+        entry: pipenv
+        args: ["run", "python", "-m", "unittest"]
         language: system
         types: [python]
         pass_filenames: false

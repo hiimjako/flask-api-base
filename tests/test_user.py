@@ -1,10 +1,120 @@
 from http import HTTPStatus
-from Api.models.permission import DEFAULT_ROLE
 
+from Api.models.permission import DEFAULT_ROLE, Permission
 from Api.models.user import UserModel
 from Api.schemas.user import UserSchema
 
 from tests import BaseTest
+
+
+class UserModelTest(BaseTest):
+    def populate_db(self):
+        user_json = {
+            "name": "Guest",
+            "surname": "test",
+            "username": "guest",
+            "password": "1234",
+            "email": "opendrive.noreply@gmail.com",
+            "role_id": 1,
+            "confirmed": True,
+        }
+        user: UserModel = UserSchema().load(user_json)
+        user.save_to_db()
+        user_json = {
+            "name": "Guest",
+            "surname": "test",
+            "username": "guest2",
+            "password": "1234",
+            "email": "opendrive.noreply2@gmail.com",
+            "role_id": 2,
+            "confirmed": True,
+        }
+        user: UserModel = UserSchema().load(user_json)
+        user.save_to_db()
+
+    def test_repr(self) -> None:
+        ret = UserModel.find_by_username("guest")
+        assert ret.__repr__() == "<User ('guest', 'opendrive.noreply@gmail.com')>"
+
+    def test_find_by_username(self) -> None:
+        ret = UserModel.find_by_username("guest")
+        assert ret.id == 1
+        assert ret.name == "Guest"
+        assert ret.surname == "test"
+        assert ret.username == "guest"
+        assert ret.password == "1234"
+        assert ret.email == "opendrive.noreply@gmail.com"
+        assert ret.role_id == 1
+        assert ret.confirmed == True
+
+    def test_can(self) -> None:
+        user = UserModel.find_by_username("guest")
+        ret = user.can(Permission.ADMINISTER)
+        assert ret == True
+        ret = user.can(Permission.STUDENT)
+        assert ret == True
+        ret = user.can(Permission.TEACHER)
+        assert ret == True
+
+        user = UserModel.find_by_username("guest2")
+        ret = user.can(Permission.ADMINISTER)
+        assert ret == False
+        ret = user.can(Permission.STUDENT)
+        assert ret == False
+        ret = user.can(Permission.TEACHER)
+        assert ret == True
+
+    def test_password(self) -> None:
+        pasw = "supersecurepass"
+        user_json = {
+            "name": "Guest",
+            "surname": "test",
+            "username": "guest",
+            "password": pasw,
+            "email": "opendrive.noreply@gmail.com",
+            "role_id": 1,
+            "confirmed": True,
+        }
+        user: UserModel = UserSchema().load(user_json)
+        user.hash_password()
+        assert user.password != pasw
+        ret = user.verify_password(pasw)
+        assert ret == True
+        ret = user.verify_password("wrongpsw")
+        assert ret == False
+
+    def test_create_confirmation_token_error(self) -> None:
+        user = UserModel.find_by_username("guest")
+        with self.assertRaises(
+            Exception,
+        ):
+            user_by_token = user.generate_confirmation_token("ciao")
+
+    def test_confirmation_token(self) -> None:
+        user = UserModel.find_by_username("guest")
+        token = user.generate_confirmation_token()
+        user_by_token = UserModel.user_by_token(token)
+        assert user.id == user_by_token.id
+
+    def test_confirmation_token_expired(self) -> None:
+        user = UserModel.find_by_username("guest")
+        token = user.generate_confirmation_token(expiration=0.01)
+        with self.assertRaises(
+            Exception,
+        ):
+            user_by_token = UserModel.user_by_token(token)
+
+    def test_confirmation_invalid_token(self) -> None:
+        with self.assertRaises(
+            Exception,
+        ):
+            user_by_token = UserModel.user_by_token("invalid")
+
+    def test_delete(self) -> None:
+        ret = UserModel.find_by_username("guest")
+        ret.delete_from_db()
+        ret = UserModel.find_by_username("guest")
+        assert ret is None
 
 
 class SignupTest(BaseTest):
@@ -18,7 +128,7 @@ class SignupTest(BaseTest):
             "role_id": 1,
             "confirmed": True,
         }
-        user = UserSchema().load(user_json)
+        user: UserModel = UserSchema().load(user_json)
         user.save_user_and_update_password()
 
     def test_successful_signup(self) -> None:
@@ -47,7 +157,7 @@ class UserRegister(BaseTest):
             "email": "opendrive.noreply@gmail.com",
             "role_id": 1,
         }
-        user = UserSchema().load(user_json)
+        user: UserModel = UserSchema().load(user_json)
         user.save_to_db()
 
     def test_successful_register(self) -> None:
@@ -68,7 +178,7 @@ class UserRegister(BaseTest):
         self.assertEqual(HTTPStatus.CREATED, response.status_code)
 
         user = UserModel.find_by_id(2)
-        userSchema = UserSchema().dump(user)
+        userSchema: UserModel = UserSchema().dump(user)
 
         self.assertEqual(
             userSchema,
