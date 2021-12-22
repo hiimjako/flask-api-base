@@ -16,15 +16,25 @@ A base template for flask API with: JWT atuh, postgres, migrations and users mod
 
    `pipenv install -d`
 
-3. Clean unused imports (before push):
+3. It is installed pre-commit, a package that runs lint and tests before commiting (can generate errors)
 
-   `pycln Api/ tests/ -a`
+   `pre-commit install`
 
-   To avoid deleting unused inport use: `# noqa`
+   Command that runs:
 
-   e.g. `import not_used_import # noqa`
+   - Code formatting with black:
 
-4. It is installed pre-commit, a package that runs lint and tests before commiting, so in case of error before commiting can be that
+     `black Api/ tests/`
+
+   - Clean unused imports:
+
+     `pycln Api/ tests/ -a`
+
+     To avoid deleting unused inport use: `# noqa`
+
+     e.g. `import not_used_import # noqa`
+
+   To disable it run `pre-commit uninstall` (not recommended)
 
 # Test api
 

@@ -17,3 +17,12 @@ repos:
         args: ["api/", "tests/", "-a"]
         types: [python]
         language_version: python3.9
+  - repo: local
+    hooks:
+      - id: unittest
+        name: unittest
+        entry: python
+        args: ["-m", "unittest"]
+        language: system
+        types: [python]
+        pass_filenames: false
