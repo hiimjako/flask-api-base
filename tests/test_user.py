@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from Api.libs.strings import gettext
 
 from Api.models.permission import DEFAULT_ROLE, Permission
 from Api.models.user import UserModel
@@ -114,6 +115,13 @@ class UserModelTest(BaseTest):
         ):
             user_by_token = UserModel.user_by_token("invalid")
 
+    def test_save_to_db(self) -> None:
+        user = UserModel.find_by_username("guest")
+        user.name = "new name"
+        user.save_to_db()
+        ret = UserModel.find_by_username("guest")
+        assert ret.name == "new name"
+
     def test_delete(self) -> None:
         ret = UserModel.find_by_username("guest")
         ret.delete_from_db()
@@ -121,7 +129,7 @@ class UserModelTest(BaseTest):
         assert ret is None
 
 
-class SignupTest(BaseTest):
+class LoginTest(BaseTest):
     def populate_db(self):
         user_json = {
             "name": "Guest",
@@ -146,7 +154,7 @@ class SignupTest(BaseTest):
         user: UserModel = UserSchema().load(user_json)
         user.save_user_and_update_password()
 
-    def test_successful_signup(self) -> None:
+    def test_successful_login(self) -> None:
         response = self.client.post(
             "/api/login",
             headers={"Content-Type": "application/json"},
@@ -158,6 +166,7 @@ class SignupTest(BaseTest):
 
         # Then
         assert "access_token" in response.json
+        assert "expires" in response.json
         assert "refresh_token" in response.json
         self.assertEqual(HTTPStatus.OK, response.status_code)
 
@@ -188,6 +197,103 @@ class SignupTest(BaseTest):
         assert "message" in response.json
         assert response.json["message"] == "User not yet confirmed."
         self.assertEqual(HTTPStatus.BAD_REQUEST, response.status_code)
+
+
+class LogoutTest(BaseTest):
+    def populate_db(self):
+        user_json = {
+            "name": "Guest",
+            "surname": "test",
+            "username": "guest",
+            "password": "1234",
+            "email": "opendrive.noreply@gmail.com",
+            "role_id": 1,
+            "confirmed": True,
+        }
+        user: UserModel = UserSchema().load(user_json)
+        user.save_user_and_update_password()
+
+    def test_successful_logout(self) -> None:
+        response = self.client.post(
+            "/api/login",
+            headers={"Content-Type": "application/json"},
+            json={
+                "username": "guest",
+                "password": "1234",
+            },
+        )
+
+        response = self.client.post(
+            "/api/logout",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {response.json['access_token']}",
+            },
+        )
+
+        assert "message" in response.json
+        assert response.json["message"] == gettext("user_logged_out").format(1)
+
+        self.assertEqual(HTTPStatus.OK, response.status_code)
+
+
+class RefreshTokenTest(BaseTest):
+    def populate_db(self):
+        user_json = {
+            "name": "Guest",
+            "surname": "test",
+            "username": "guest",
+            "password": "1234",
+            "email": "opendrive.noreply@gmail.com",
+            "role_id": 1,
+            "confirmed": True,
+        }
+        user: UserModel = UserSchema().load(user_json)
+        user.save_user_and_update_password()
+
+    def test_successfull_refresh(self) -> None:
+        response = self.client.post(
+            "/api/login",
+            headers={"Content-Type": "application/json"},
+            json={
+                "username": "guest",
+                "password": "1234",
+            },
+        )
+        response = self.client.post(
+            "/api/token/refresh",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {response.json['refresh_token']}",
+            },
+        )
+
+        assert "access_token" in response.json
+        assert "expires" in response.json
+        self.assertEqual(HTTPStatus.OK, response.status_code)
+
+    def test_unsuccessfull_refresh(self) -> None:
+        response = self.client.post(
+            "/api/login",
+            headers={"Content-Type": "application/json"},
+            json={
+                "username": "guest",
+                "password": "1234",
+            },
+        )
+
+        response = self.client.post(
+            "/api/token/refresh",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {response.json['refresh_token'][:-7]}invalid",
+            },
+        )
+
+        assert "message" in response.json
+        assert response.json["message"] == "Signature verification failed"
+
+        self.assertEqual(HTTPStatus.UNPROCESSABLE_ENTITY, response.status_code)
 
 
 class UserRegisterTest(BaseTest):
@@ -272,7 +378,7 @@ class UserRegisterTest(BaseTest):
         self.assertEqual(HTTPStatus.CONFLICT, response.status_code)
 
 
-class UserRestoreCredentialsTest(BaseTest):
+class UserCredentialsTest(BaseTest):
     def populate_db(self):
         user_json = {
             "name": "Guest",
@@ -335,3 +441,92 @@ class UserRestoreCredentialsTest(BaseTest):
         assert "message" in response.json
         assert response.json["message"] == "User not found."
         self.assertEqual(HTTPStatus.NOT_FOUND, response.status_code)
+
+
+class SelfUserTest(BaseTest):
+    def populate_db(self):
+        user_json = {
+            "name": "Guest",
+            "surname": "test",
+            "username": "guest",
+            "password": "1234",
+            "email": "opendrive.noreply@gmail.com",
+            "role_id": 1,
+            "confirmed": True,
+        }
+        user: UserModel = UserSchema().load(user_json)
+        user.save_user_and_update_password()
+
+    def test_successful_get_user_info(self) -> None:
+        response = self.client.get(
+            "/api/user",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {create_access_token(1, fresh=True)}",
+            },
+        )
+
+        userSchema: UserModel = UserSchema().dump(response.json)
+
+        self.assertEqual(
+            userSchema,
+            {
+                "avatar": None,
+                "name": "Guest",
+                "username": "guest",
+                "confirmed": True,
+                "role_id": 1,
+                "id": 1,
+                "surname": "test",
+                "email": "opendrive.noreply@gmail.com",
+            },
+        )
+        self.assertEqual(HTTPStatus.OK, response.status_code)
+
+    def test_error_no_user_found(self) -> None:
+        response = self.client.get(
+            "/api/user",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {create_access_token(9999, fresh=True)}",
+            },
+        )
+
+        assert "message" in response.json
+        assert response.json["message"] == "User not found."
+        self.assertEqual(HTTPStatus.NOT_FOUND, response.status_code)
+
+    def test_successful_update_user_info(self) -> None:
+        new_user_info = {
+            "avatar": "img.png",
+            "name": "new name",
+            "role_id": 2,
+            "surname": "new surname",
+            "email": "opendrive.noreply2@gmail.com",
+        }
+
+        response = self.client.put(
+            "/api/user",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {create_access_token(1, fresh=True)}",
+            },
+            json=new_user_info,
+        )
+
+        userSchema: UserModel = UserSchema().dump(response.json)
+
+        self.assertEqual(
+            userSchema,
+            {
+                "avatar": "img.png",
+                "name": "new name",
+                "username": "guest",
+                "confirmed": True,
+                "role_id": 2,
+                "id": 1,
+                "surname": "new surname",
+                "email": "opendrive.noreply2@gmail.com",
+            },
+        )
+        self.assertEqual(HTTPStatus.OK, response.status_code)

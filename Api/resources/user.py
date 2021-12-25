@@ -100,8 +100,8 @@ class SelfUser(MethodResource, Resource):
     @jwt_required()
     def get(self):
         user = get_current_user_wrapper()
-        if not user:
-            raise UserException.UserNotFound
+        # if not user: # not needed
+        #     raise UserException.UserNotFound
 
         return user, HTTPStatus.OK
 
@@ -111,8 +111,8 @@ class SelfUser(MethodResource, Resource):
     @jwt_required()
     def put(self, **kwargs):
         user = get_current_user_wrapper()
-        if not user:
-            raise UserException.UserNotFound
+        # if not user: # not needed
+        #     raise UserException.UserNotFound
 
         user_json = kwargs
 
@@ -120,7 +120,7 @@ class SelfUser(MethodResource, Resource):
             try:
                 if hasattr(user, k):
                     user.__setattr__(k, v)
-            except:
+            except:  # pragma: no cover
                 pass
 
         user.save_to_db()
@@ -163,7 +163,7 @@ class UserLogin(MethodResource, Resource):
         raise UserException.UserInvalidCredentials
 
 
-class UserRestoreCredentials(MethodResource, Resource):
+class UserCredentials(MethodResource, Resource):
     @doc(
         description="Restore user credentials sending email to generate a new one.",
         tags=["User"],
@@ -257,7 +257,7 @@ class UserLogout(MethodResource, Resource):
         try:
             refresh_token = request.cookies["refresh_token_cookie"]
             save_token_into_redis("refresh", get_jti(refresh_token), user_id)
-        except:
+        except:  # pragma: no cover
             print(f"[WARNING] On logout no refresh_token given, user: {user_id}")
 
         @after_this_request
