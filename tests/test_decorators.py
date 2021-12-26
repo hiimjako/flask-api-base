@@ -41,7 +41,7 @@ class DecoratorsTest(BaseTest):
         @jwt_required()
         @permission_required(Permission.ADMINISTER)
         def foo():
-            return True
+            return True  # pragma: no cover
 
         with self.assertRaises(
             UserHasNoPermission,

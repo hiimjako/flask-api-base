@@ -1,15 +1,14 @@
 import json
+from time import time
+
+import Api.errors.confirmation as ConfirmationException
 from Api.db import db
 from Api.libs.mail import Mail
-from flask import request, url_for, current_app
+from Api.models.permission import DEFAULT_ROLE, Permission
+from authlib.jose import JsonWebSignature
+from flask import current_app, request, url_for
 from requests import Response
 from werkzeug.security import check_password_hash, generate_password_hash
-from authlib.jose import JsonWebSignature
-from time import time
-import Api.errors.confirmation as ConfirmationException
-
-
-from Api.models.permission import DEFAULT_ROLE, Permission
 
 CONFIRMATION_EXPIRATION_DELTA = 1800  # 30 minutes
 HEADER_TOKEN = {"alg": "HS256"}
@@ -49,7 +48,7 @@ class UserModel(db.Model):
     def verify_password(self, password):
         return check_password_hash(self.password, password)
 
-    def generate_confirmation_token(
+    def generate_external_token(
         self, expiration=CONFIRMATION_EXPIRATION_DELTA
     ) -> "bytes":
         """Generate a confirmation token for invite"""
@@ -93,13 +92,35 @@ class UserModel(db.Model):
         subject = "Registration Confirmation"
         link = request.url_root[:-1] + url_for(
             "confirmation",
-            confirmation_token=self.generate_confirmation_token(),
+            confirmation_token=self.generate_external_token(),
         )
         # string[:-1] means copying from start (inclusive) to the last index (exclusive), a more detailed link below:
         # from `http://127.0.0.1:5000/` to `http://127.0.0.1:5000`, since the url_for() would also contain a `/`
         # https://stackoverflow.com/questions/509211/understanding-pythons-slice-notation
         text = f"Please click the link to confirm your registration: {link}"
         html = f"<html>Please click the link to confirm your registration: <a href={link}>link</a></html>"
+        # send e-mail with Mail
+        return Mail.send_email([self.email], subject, text, html)
+
+    def send_reset_password_email(self) -> Response:
+        # configure e-mail contents
+        subject = "Password reset request"
+        link = request.url_root[:-1] + url_for(
+            "usercredentialsexternal",
+            reset_token=self.generate_external_token(),
+        )
+        text = f"""Hi there,
+        Looks like a request was made to reset the password for your {self.username} account.
+        You can reset your password using the link below:
+        {link}
+        If you didn’t want to reset your password, you can safely ignore this email."""
+
+        html = f"""<html>Hi there,<br/>
+        Looks like a request was made to reset the password for your {self.username} account.
+        You can reset your password using the link below:<br/>
+        <a href={link}>link</a><br/>
+        If you didn’t want to reset your password, you can safely ignore this email.</html>"""
+
         # send e-mail with Mail
         return Mail.send_email([self.email], subject, text, html)
 
@@ -110,8 +131,10 @@ class UserModel(db.Model):
 
     def save_user_and_update_password(self) -> None:
         self.hash_password()
-        db.session.add(self)
-        db.session.commit()
+        self.save_to_db()
+        from Api.jwt import delete_all_refresh_token_by_user_id
+
+        delete_all_refresh_token_by_user_id(self.id)
 
     def save_to_db(self) -> None:
         db.session.add(self)

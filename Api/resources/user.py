@@ -2,13 +2,12 @@ import traceback
 from http import HTTPStatus
 
 import Api.errors.user as UserException
-from Api import redis_client
 from Api.decorators import admin_required, doc_with_jwt
 from Api.jwt import (
+    create_refresh_token_and_store,
     delete_token_into_redis,
     get_current_user_wrapper,
     get_expire_time_by_type,
-    get_redis_prefix_by_type,
     save_token_into_redis,
 )
 from Api.libs.strings import gettext
@@ -16,18 +15,19 @@ from Api.models.user import UserModel
 from Api.schemas.common import GenericReturnSchema
 from Api.schemas.user import (
     TokenReturnSchema,
+    UserCredentialsPostExternal,
     UserLoginPostRequestSchema,
     UserPostRequestSchema,
     UserPutRequestSchema,
     UserSchema,
-    UserUpdateCredentials,
+    UserUpdatePostCredentials,
+    UserUpdatePutCredentials,
 )
 from flask import after_this_request, request
 from flask_apispec import doc, marshal_with, use_kwargs
 from flask_apispec.views import MethodResource
 from flask_jwt_extended import (
     create_access_token,
-    create_refresh_token,
     get_jwt,
     get_jwt_identity,
     jwt_required,
@@ -143,9 +143,7 @@ class UserLogin(MethodResource, Resource):
         if user and user.verify_password(user_data["password"]):
             if user.confirmed:
                 access_token = create_access_token(user.id, fresh=True)
-                refresh_token = create_refresh_token(user.id)
-
-                save_token_into_redis("refresh", get_jti(refresh_token), user.id)
+                refresh_token = create_refresh_token_and_store(user.id)
 
                 @after_this_request
                 def set_cookie_value(response):
@@ -169,39 +167,34 @@ class UserCredentials(MethodResource, Resource):
         description="Restore user credentials sending email to generate a new one.",
         tags=["User"],
     )
-    @use_kwargs(UserLoginPostRequestSchema, location=("json"))
+    @use_kwargs(UserUpdatePostCredentials, location=("json"))
     @marshal_with(TokenReturnSchema)
     def post(self, **kwargs):
         # TODO: send email and new password
         # user_json = request.get_json()
         user_json = kwargs
-        user_data = UserLoginPostRequestSchema().load(user_json)
+        user = UserModel.find_by_username(user_json["username"])
 
-        user = UserModel.find_by_username(user_data["username"])
+        if user is None:
+            raise UserException.UserNotFound
 
-        if user and user.verify_password(user_data["password"]):
-            if user.confirmed:
-                access_token = create_access_token(user.id, fresh=True)
-                refresh_token = create_refresh_token(user.id)
+        if user.email != user_json["email"]:
+            raise UserException.UserInvalidEmail
 
-                @after_this_request
-                def set_cookie_value(response):
-                    set_refresh_cookies(response, refresh_token)
-                    return response
-
-                return (
-                    {
-                        "access_token": access_token,
-                        "refresh_token": refresh_token,
-                        "expires": get_expire_time_by_type("access").seconds,
-                    },
-                    HTTPStatus.OK,
-                )
+        if not user.confirmed:
             raise UserException.UserNotConfirmed
-        raise UserException.UserInvalidCredentials
+
+        user.send_reset_password_email()
+
+        return (
+            {
+                "message": gettext("user_reset_password_email").format(user.id),
+            },
+            HTTPStatus.OK,
+        )
 
     @doc_with_jwt(description="Update user credentials.", tags=["User"])
-    @use_kwargs(UserUpdateCredentials, location=("json"))
+    @use_kwargs(UserUpdatePutCredentials, location=("json"))
     @marshal_with(TokenReturnSchema)
     @jwt_required(fresh=True)
     def put(self, **kwargs):
@@ -216,15 +209,7 @@ class UserCredentials(MethodResource, Resource):
                 user.password = user_json["new_password"]
                 user.save_user_and_update_password()
                 access_token = create_access_token(user.id, fresh=True)
-                refresh_token = create_refresh_token(user.id)
-
-                # Disable all old refresh token that now are invalid
-                for key in redis_client.scan_iter(
-                    f"{user.id}:{get_redis_prefix_by_type('refresh')}:*"
-                ):
-                    redis_client.delete(key)
-
-                save_token_into_redis("refresh", get_jti(refresh_token), user.id)
+                refresh_token = create_refresh_token_and_store(user.id)
 
                 @after_this_request
                 def set_cookie_value(response):
@@ -241,6 +226,32 @@ class UserCredentials(MethodResource, Resource):
                 )
             raise UserException.UserNotConfirmed
         raise UserException.UserInvalidCredentials
+
+
+class UserCredentialsExternal(MethodResource, Resource):
+    @doc(
+        description="Restore user credentials sending email to generate a new one.",
+        params={
+            "reset_token": {
+                "description": "The ID of the confirmation",
+                "example": "cdb93c441cee49ada0527862b7f73350",
+            },
+        },
+        tags=["User"],
+    )
+    @use_kwargs(UserCredentialsPostExternal, location=("json"))
+    @marshal_with(GenericReturnSchema)
+    def post(self, reset_token: str, **kwargs):
+
+        user = UserModel.user_by_token(reset_token)
+        if not user:
+            raise UserException.UserNotFound
+
+        user_json = kwargs
+        user.password = user_json["password"]
+        user.save_user_and_update_password()
+
+        return {"message": gettext("user_reset_password_successful")}, HTTPStatus.OK
 
 
 class UserLogout(MethodResource, Resource):

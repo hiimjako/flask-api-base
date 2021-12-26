@@ -10,12 +10,27 @@ class TokenReturnSchema(Schema):
     expires = fields.Integer(required=False, description="The jwt expiration time")
 
 
-class UserUpdateCredentials(ma.SQLAlchemySchema):
+class UserUpdatePutCredentials(ma.SQLAlchemySchema):
     class Meta:
         model = UserModel
 
     old_password = fields.String(required=True, description="The old password")
     new_password = auto_field("password", attribute="new_password")
+
+
+class UserUpdatePostCredentials(ma.SQLAlchemySchema):
+    class Meta:
+        model = UserModel
+
+    username = auto_field()
+    email = auto_field()
+
+
+class UserCredentialsPostExternal(ma.SQLAlchemySchema):
+    class Meta:
+        model = UserModel
+
+    password = auto_field("password")
 
 
 class UserLoginPostRequestSchema(ma.SQLAlchemySchema):

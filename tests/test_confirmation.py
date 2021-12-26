@@ -23,7 +23,7 @@ class ConfirmationTest(BaseTest):
 
     def test_successful_confirmation(self) -> None:
         user = UserModel.find_by_username("guest")
-        token = user.generate_confirmation_token().decode("utf-8")
+        token = user.generate_external_token().decode("utf-8")
         response = self.client.get(
             f"/api/user_confirm/{token}",
             headers={
@@ -36,7 +36,7 @@ class ConfirmationTest(BaseTest):
 
     def test_error_no_user_found(self) -> None:
         user = UserModel.find_by_username("guest")
-        token = user.generate_confirmation_token().decode("utf-8")
+        token = user.generate_external_token().decode("utf-8")
         user.delete_from_db()
         response = self.client.get(
             f"/api/user_confirm/{token}",
@@ -51,7 +51,7 @@ class ConfirmationTest(BaseTest):
 
     def test_error_user_already_confirmed(self) -> None:
         user = UserModel.find_by_username("guest")
-        token = user.generate_confirmation_token().decode("utf-8")
+        token = user.generate_external_token().decode("utf-8")
         user.confirmed = True
         user.save_to_db()
         response = self.client.get(

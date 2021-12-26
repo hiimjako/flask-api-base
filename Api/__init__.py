@@ -18,6 +18,7 @@ from Api.resources.user import (
     SelfUser,
     TokenRefresh,
     User,
+    UserCredentialsExternal,
     UserLogin,
     UserLogout,
     UserRegister,
@@ -112,6 +113,7 @@ def create_app(config_name: str = None, verbose: bool = True) -> "Flask":
     api.add_resource(UserRegister, "/register")
     api.add_resource(SelfUser, "/user")
     api.add_resource(UserCredentials, "/user/credential")
+    api.add_resource(UserCredentialsExternal, "/user/<string:reset_token>/credential")
     api.add_resource(User, "/user/<int:user_id>")
     api.add_resource(TokenRefresh, "/token/refresh")
     api.add_resource(UserLogin, "/login")
@@ -122,6 +124,7 @@ def create_app(config_name: str = None, verbose: bool = True) -> "Flask":
     docs.register(SelfUser)
     docs.register(UserRegister)
     docs.register(UserCredentials)
+    docs.register(UserCredentialsExternal)
     docs.register(Confirmation)
 
     return app

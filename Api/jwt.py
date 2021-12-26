@@ -1,7 +1,7 @@
 from datetime import timedelta
 from flask import current_app
 from flask_jwt_extended import JWTManager
-from flask_jwt_extended.utils import get_current_user
+from flask_jwt_extended.utils import create_refresh_token, get_current_user, get_jti
 
 import Api.errors.user as UserException
 from Api import redis_client
@@ -25,6 +25,12 @@ def delete_token_into_redis(jwt_type: str, jti: str, user_id: int) -> None:
     redis_client.delete(
         f"{user_id}:{get_redis_prefix_by_type(jwt_type)}:{jti}",
     )
+
+
+def delete_all_refresh_token_by_user_id(id: int) -> None:
+    # Disable all old refresh token that now are invalid
+    for key in redis_client.scan_iter(f"{id}:{get_redis_prefix_by_type('refresh')}:*"):
+        redis_client.delete(key)
 
 
 def get_expire_time_by_type(jwt_type: str) -> timedelta:
@@ -78,3 +84,13 @@ def _user_lookup_callback(_jwt_header, jwt_data) -> "UserModel":
 
 def get_current_user_wrapper() -> "UserModel":
     return get_current_user()
+
+
+def create_refresh_token_and_store(
+    identity, expires_delta=None, additional_claims=None, additional_headers=None
+) -> str:
+    refresh_token = create_refresh_token(
+        identity, expires_delta, additional_claims, additional_headers
+    )
+    save_token_into_redis("refresh", get_jti(refresh_token), identity)
+    return refresh_token

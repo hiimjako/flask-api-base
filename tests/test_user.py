@@ -92,17 +92,17 @@ class UserModelTest(BaseTest):
         with self.assertRaises(
             Exception,
         ):
-            user_by_token = user.generate_confirmation_token("ciao")
+            user_by_token = user.generate_external_token("ciao")
 
     def test_confirmation_token(self) -> None:
         user = UserModel.find_by_username("guest")
-        token = user.generate_confirmation_token()
+        token = user.generate_external_token()
         user_by_token = UserModel.user_by_token(token)
         assert user.id == user_by_token.id
 
     def test_confirmation_token_expired(self) -> None:
         user = UserModel.find_by_username("guest")
-        token = user.generate_confirmation_token(expiration=0.01)
+        token = user.generate_external_token(expiration=0.01)
         with self.assertRaises(
             Exception,
         ):

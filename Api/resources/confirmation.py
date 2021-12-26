@@ -17,12 +17,6 @@ class Confirmation(MethodResource, Resource):
                 "description": "The ID of the confirmation",
                 "example": "cdb93c441cee49ada0527862b7f73350",
             },
-            "bypass-user-id": {
-                "description": "Admin user is enabled to bypass a user",
-                "in": "query",
-                "type": "string",
-                "required": False,
-            },
         },
         tags=["Confirmation"],
     )
