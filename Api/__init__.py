@@ -12,7 +12,7 @@ import Api.errors as APIException
 from Api.config import config as Config
 from Api.db import db, migrate, redis_client
 from Api.errors.app import InvalidConfigurationName
-from Api.jwt import jwt
+from Api.jwt import jwt_manager
 from Api.resources.confirmation import Confirmation
 from Api.resources.user import (
     SelfUser,
@@ -62,7 +62,7 @@ def create_app(config_name: str = None, verbose: bool = True) -> "Flask":
     redis_client.init_app(app)
     migrate.init_app(app, db)
     mail.init_app(app)
-    jwt.init_app(app)
+    jwt_manager.init_app(app)
     docs = FlaskApiSpec(app)
 
     @app.before_first_request

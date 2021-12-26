@@ -1,3 +1,4 @@
+from http import HTTPStatus
 import Api.errors.confirmation as ConfirmationException
 import Api.errors.user as UserException
 from Api.models.user import UserModel
@@ -41,7 +42,7 @@ class Confirmation(MethodResource, Resource):
         headers = {"Content-Type": "text/html"}
         return make_response(
             render_template("confirmation_page.html"),
-            200,
+            HTTPStatus.OK,
             headers,
         )
         # Url_for

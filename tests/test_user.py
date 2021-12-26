@@ -1,16 +1,15 @@
 from http import HTTPStatus
-from Api.libs.strings import gettext
 
+from Api import redis_client
+from Api.jwt import get_redis_prefix_by_type
+from Api.libs.strings import gettext
 from Api.models.permission import DEFAULT_ROLE, Permission
 from Api.models.user import UserModel
 from Api.schemas.user import UserSchema
+from flask_jwt_extended import create_access_token, create_refresh_token
+from flask_jwt_extended.utils import get_jti
 
 from tests import BaseTest
-
-from flask_jwt_extended import (
-    create_access_token,
-    create_refresh_token,
-)
 
 
 class UserModelTest(BaseTest):
@@ -214,6 +213,7 @@ class LogoutTest(BaseTest):
         user.save_user_and_update_password()
 
     def test_successful_logout(self) -> None:
+        user = UserModel.find_by_username("guest")
         response = self.client.post(
             "/api/login",
             headers={"Content-Type": "application/json"},
@@ -222,6 +222,8 @@ class LogoutTest(BaseTest):
                 "password": "1234",
             },
         )
+
+        refresh_token = response.json["refresh_token"]
 
         response = self.client.post(
             "/api/logout",
@@ -232,9 +234,16 @@ class LogoutTest(BaseTest):
         )
 
         assert "message" in response.json
-        assert response.json["message"] == gettext("user_logged_out").format(1)
+        assert response.json["message"] == gettext("user_logged_out").format(user.id)
 
         self.assertEqual(HTTPStatus.OK, response.status_code)
+        # check token exists in redis
+        assert (
+            redis_client.get(
+                f"{user.id}:{get_redis_prefix_by_type('refresh')}:{get_jti(refresh_token)}"
+            )
+            == None
+        )
 
 
 class RefreshTokenTest(BaseTest):
@@ -251,7 +260,7 @@ class RefreshTokenTest(BaseTest):
         user: UserModel = UserSchema().load(user_json)
         user.save_user_and_update_password()
 
-    def test_successfull_refresh(self) -> None:
+    def test_successful_refresh(self) -> None:
         response = self.client.post(
             "/api/login",
             headers={"Content-Type": "application/json"},
@@ -272,7 +281,7 @@ class RefreshTokenTest(BaseTest):
         assert "expires" in response.json
         self.assertEqual(HTTPStatus.OK, response.status_code)
 
-    def test_unsuccessfull_refresh(self) -> None:
+    def test_unsuccessful_refresh(self) -> None:
         response = self.client.post(
             "/api/login",
             headers={"Content-Type": "application/json"},
@@ -398,6 +407,16 @@ class UserCredentialsTest(BaseTest):
         }
 
     def test_update_password(self) -> None:
+        # Creating tokens into redis
+        response = self.client.post(
+            "/api/login",
+            headers={"Content-Type": "application/json"},
+            json={
+                "username": "guest",
+                "password": "old1234",
+            },
+        )
+
         response = self.client.put(
             "/api/user/credential",
             headers={
@@ -412,6 +431,19 @@ class UserCredentialsTest(BaseTest):
         user = UserModel.find_by_username("guest")
         res = user.verify_password("test1234")
         assert res == True
+
+        # Check no redis key aviable for this user (refresh token)
+        # Only the new one created by update
+        assert (
+            len(
+                list(
+                    redis_client.scan_iter(
+                        f"{user.id}:{get_redis_prefix_by_type('refresh')}:*"
+                    )
+                )
+            )
+            == 1
+        )
 
     def test_update_password_fresh_token_needed(self) -> None:
         user = UserModel.find_by_username("guest")
@@ -441,6 +473,43 @@ class UserCredentialsTest(BaseTest):
         assert "message" in response.json
         assert response.json["message"] == "User not found."
         self.assertEqual(HTTPStatus.NOT_FOUND, response.status_code)
+
+    def test_update_password_not_confirmed_user(self) -> None:
+        user = UserModel.find_by_username("guest")
+        user.confirmed = False
+        user.save_to_db()
+
+        response = self.client.put(
+            "/api/user/credential",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {create_access_token(user.id, fresh=True)}",
+            },
+            json={"old_password": "old1234", "new_password": "test1234"},
+        )
+
+        user.confirmed = True
+        user.save_to_db()
+
+        assert "message" in response.json
+        assert response.json["message"] == "User not yet confirmed."
+        self.assertEqual(HTTPStatus.BAD_REQUEST, response.status_code)
+
+    def test_update_password_invalid_credentials_user(self) -> None:
+        user = UserModel.find_by_username("guest")
+
+        response = self.client.put(
+            "/api/user/credential",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {create_access_token(user.id, fresh=True)}",
+            },
+            json={"old_password": "not right password", "new_password": "test1234"},
+        )
+
+        assert "message" in response.json
+        assert response.json["message"] == "User credentials invalid."
+        self.assertEqual(HTTPStatus.UNAUTHORIZED, response.status_code)
 
 
 class SelfUserTest(BaseTest):

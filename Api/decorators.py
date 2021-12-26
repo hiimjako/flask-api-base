@@ -1,9 +1,9 @@
 from functools import wraps
 
 from flask_apispec.annotations import activate, annotate
-from flask_jwt_extended import get_current_user
 
 import Api.errors.user as UserException
+from Api.jwt import get_current_user_wrapper
 from Api.models.permission import Permission
 
 
@@ -35,14 +35,8 @@ def permission_required(permission):
     def wrapper(func):
         @wraps(func)
         def decorated_function(*args, **kwargs):
-            user = None
-
-            try:
-                user = get_current_user()
-            except Exception as e:
-                raise UserException.UserIsNotLoggedIn
-
-            if not user.can(permission):
+            user = get_current_user_wrapper()
+            if user is None or not user.can(permission):
                 raise UserException.UserHasNoPermission
             return func(*args, **kwargs)
 

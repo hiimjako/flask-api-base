@@ -7,7 +7,7 @@ import Api.errors.user as UserException
 from Api import redis_client
 from Api.models.user import UserModel
 
-jwt = JWTManager()
+jwt_manager = JWTManager()
 
 JWT_PREFIX_ACCESS_TOKEN_REDIS = "access"
 JWT_PREFIX_REFRESH_TOKEN_REDIS = "refresh"
@@ -18,6 +18,12 @@ def save_token_into_redis(jwt_type: str, jti: str, user_id: int) -> None:
         f"{user_id}:{get_redis_prefix_by_type(jwt_type)}:{jti}",
         "",
         ex=get_expire_time_by_type(jwt_type),
+    )
+
+
+def delete_token_into_redis(jwt_type: str, jti: str, user_id: int) -> None:
+    redis_client.delete(
+        f"{user_id}:{get_redis_prefix_by_type(jwt_type)}:{jti}",
     )
 
 
@@ -36,7 +42,7 @@ def get_redis_prefix_by_type(jwt_type: str) -> str:
 
 
 # https://flask-jwt-extended.readthedocs.io/en/stable/blocklist_and_token_revoking/
-@jwt.token_in_blocklist_loader
+@jwt_manager.token_in_blocklist_loader
 def check_if_token_in_blocklist(jwt_header, jwt_payload) -> bool:
     jti = jwt_payload["jti"]
     jwt_type = jwt_payload["type"]
@@ -44,21 +50,24 @@ def check_if_token_in_blocklist(jwt_header, jwt_payload) -> bool:
     prefix = get_redis_prefix_by_type(jwt_type)
     token_in_redis = redis_client.get(f"{identity}:{prefix}:{jti}")
 
+    # True -> revoked
+    # False -> valid
     if jwt_type == "access":
         return token_in_redis is not None
 
     if jwt_type == "refresh":
         return token_in_redis is None
 
-    return True
+    # Revoked as default (unreachable)
+    return True  # pragma: no cover
 
 
-@jwt.user_identity_loader
+@jwt_manager.user_identity_loader
 def _user_identity_lookup(user_id: int) -> int:
     return user_id
 
 
-@jwt.user_lookup_loader
+@jwt_manager.user_lookup_loader
 def _user_lookup_callback(_jwt_header, jwt_data) -> "UserModel":
     identity = jwt_data["sub"]
     user = UserModel.find_by_id(identity)

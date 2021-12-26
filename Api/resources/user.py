@@ -5,6 +5,7 @@ import Api.errors.user as UserException
 from Api import redis_client
 from Api.decorators import admin_required, doc_with_jwt
 from Api.jwt import (
+    delete_token_into_redis,
     get_current_user_wrapper,
     get_expire_time_by_type,
     get_redis_prefix_by_type,
@@ -205,8 +206,8 @@ class UserCredentials(MethodResource, Resource):
     @jwt_required(fresh=True)
     def put(self, **kwargs):
         user = get_current_user_wrapper()
-        if not user:
-            raise UserException.UserNotFound
+        # if not user: # not needed
+        #     raise UserException.UserNotFound
 
         user_json = kwargs
 
@@ -256,7 +257,7 @@ class UserLogout(MethodResource, Resource):
 
         try:
             refresh_token = request.cookies["refresh_token_cookie"]
-            save_token_into_redis("refresh", get_jti(refresh_token), user_id)
+            delete_token_into_redis("refresh", get_jti(refresh_token), user_id)
         except:  # pragma: no cover
             print(f"[WARNING] On logout no refresh_token given, user: {user_id}")
 

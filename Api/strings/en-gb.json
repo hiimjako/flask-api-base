@@ -7,7 +7,7 @@
   "confirmation_link_expired": "The link has expired.",
   "confirmation_already_confirmed": "Registration has already been confirmed.",
   "confirmation_resend_fail": "Internal server error. Failed to resend confirmation email.",
-  "confirmation_resend_successful": "E-mail confirmation successfully re-sent.",
+  "confirmation_resend_successful": "E-mail confirmation successfuly re-sent.",
 
   "item_name_exists": "An item with name '{}' already exists.",
   "item_error_inserting": "An error occurred while inserting the item.",
@@ -24,8 +24,8 @@
   "user_not_found": "User not found.",
   "user_deleted": "User deleted.",
   "user_invalid_credentials": "Invalid credentials!",
-  "user_logged_out": "User <id={}> successfully logged out.",
+  "user_logged_out": "User <id={}> successfuly logged out.",
   "user_not_confirmed": "You have not confirmed registration, please check your email <{}>.",
   "user_error_creating": "Internal server error. Failed to create user.",
-  "user_registered": "Account created successfully, an email with an activation link has been sent to your email address, please check."
+  "user_registered": "Account created successfuly, an email with an activation link has been sent to your email address, please check."
 }
