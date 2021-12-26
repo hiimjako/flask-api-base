@@ -1,8 +1,8 @@
 import json
 from time import time
 
-import Api.errors.confirmation as ConfirmationException
-from Api.db import db
+import Api.errors.token as TokenException
+from Api.db import db, redis_client
 from Api.libs.mail import Mail
 from Api.models.permission import DEFAULT_ROLE, Permission
 from authlib.jose import JsonWebSignature
@@ -51,7 +51,7 @@ class UserModel(db.Model):
     def generate_external_token(
         self, expiration=CONFIRMATION_EXPIRATION_DELTA
     ) -> "bytes":
-        """Generate a confirmation token for invite"""
+        """Generate a token to be used in external envs, can be used only one time"""
         try:
             jws = JsonWebSignature()
             payload = {
@@ -65,11 +65,15 @@ class UserModel(db.Model):
             )
             return jws.serialize_compact(HEADER_TOKEN, payload, secret)
         except:
-            raise ConfirmationException.ConfirmationCreate
+            raise TokenException.Create
 
     @classmethod
     def user_by_token(cls, token) -> "UserModel":
-        """Validate a confirmation token for invite, it returns the user if the token is valid"""
+        """Validate a confirmation token for invite, it returns the user if the token is valid. After invalidates the token"""
+
+        if redis_client.get(f"external_token:{token}") is not None:
+            raise TokenException.AlreadyUsed
+
         try:
             secret = bytes(
                 current_app.config["SECRET_KEY"], encoding="raw_unicode_escape"
@@ -77,11 +81,16 @@ class UserModel(db.Model):
             jws = JsonWebSignature()
             data = jws.deserialize_compact(token, secret)
             payload = json.loads(data["payload"])
-        except:
-            raise ConfirmationException.BadSignature
+            redis_client.set(
+                f"external_token:{token}",
+                "",
+                ex=payload["expiration"],
+            )
+        except Exception as e:
+            raise TokenException.BadSignature
 
         if time() > payload.get("expiration"):
-            raise ConfirmationException.ConfirmationExpired
+            raise TokenException.Expired
 
         user = cls.find_by_id(payload.get("user_id"))
 

@@ -2,11 +2,11 @@ from werkzeug.exceptions import HTTPException
 from http import HTTPStatus
 
 
-class ConfirmationNotFound(HTTPException):
+class NotFound(HTTPException):
     pass
 
 
-class ConfirmationExpired(HTTPException):
+class Expired(HTTPException):
     pass
 
 
@@ -18,37 +18,45 @@ class InvalidUser(HTTPException):
     pass
 
 
-class ConfirmationAlreadyConfirmed(HTTPException):
+class AlreadyConfirmed(HTTPException):
     pass
 
 
-class ConfirmationCreate(HTTPException):
+class AlreadyUsed(HTTPException):
+    pass
+
+
+class Create(HTTPException):
     pass
 
 
 errors = {
-    "ConfirmationExpired": {
-        "message": "The confirmation token has expired.",
+    "Expired": {
+        "message": "The token has expired.",
         "status": HTTPStatus.BAD_REQUEST,
     },
     "BadSignature": {
-        "message": "The confirmation token is invalid.",
+        "message": "The token is invalid.",
         "status": HTTPStatus.BAD_REQUEST,
     },
     "InvalidUser": {
-        "message": "The confirmation token is invalid.",
+        "message": "The token is invalid.",
         "status": HTTPStatus.BAD_REQUEST,
     },
-    "ConfirmationAlreadyConfirmed": {
+    "AlreadyConfirmed": {
         "message": "The user has been already confirmed.",
         "status": HTTPStatus.BAD_REQUEST,
     },
-    "ConfirmationNotFound": {
-        "message": "Confirmation not found.",
+    "NotFound": {
+        "message": "Token not found.",
         "status": HTTPStatus.NOT_FOUND,
     },
-    "ConfirmationCreate": {
-        "message": "Internal server error. Failed to create confirmation.",
+    "Create": {
+        "message": "Internal server error. Failed to create.",
         "status": HTTPStatus.INTERNAL_SERVER_ERROR,
+    },
+    "AlreadyUsed": {
+        "message": "The token has been already used.",
+        "status": HTTPStatus.BAD_REQUEST,
     },
 }

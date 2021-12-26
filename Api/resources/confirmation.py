@@ -1,5 +1,5 @@
 from http import HTTPStatus
-import Api.errors.confirmation as ConfirmationException
+import Api.errors.token as TokenException
 import Api.errors.user as UserException
 from Api.models.user import UserModel
 from Api.schemas.common import GenericReturnSchema
@@ -27,7 +27,7 @@ class Confirmation(MethodResource, Resource):
             raise UserException.UserNotFound
 
         if user.confirmed:
-            raise ConfirmationException.ConfirmationAlreadyConfirmed
+            raise TokenException.AlreadyConfirmed
 
         # if i get the user here the token is valid
         user.confirmed = True
